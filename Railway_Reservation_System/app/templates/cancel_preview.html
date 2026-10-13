@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Cancellation Preview for PNR {{ booking.pnr_number }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-danger text-white py-3">
+                <h4 class="fw-bold mb-0">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> Cancellation Confirmation & Refund Preview
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-warning mb-4">
+                    <i class="fa-solid fa-circle-exclamation me-2"></i>
+                    You are requesting cancellation for PNR <strong>{{ booking.pnr_number }}</strong>. This action is irreversible.
+                </div>
+
+                <!-- BOOKING SUMMARY -->
+                <div class="bg-light border rounded-3 p-3 mb-4">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <small class="text-muted">Passenger Name:</small>
+                            <div class="fw-bold">{{ booking.passenger.full_name }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">Current Status:</small>
+                            <div>
+                                <span class="badge {% if booking.booking_status == 'CONFIRMED' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                    {{ booking.booking_status }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">Train & Date:</small>
+                            <div class="fw-semibold">{{ booking.train_run.train.train_name }} ({{ booking.train_run.run_date.strftime('%d %b %Y') }})</div>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">Journey Route:</small>
+                            <div class="fw-semibold">{{ booking.origin_station.station_code }} → {{ booking.destination_station.station_code }} ({{ booking.travel_class }})</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REFUND BREAKDOWN -->
+                <h5 class="fw-bold mb-3 text-navy" style="color: var(--navy-primary);">
+                    <i class="fa-solid fa-calculator me-1 text-primary"></i> Deterministic Refund Breakdown
+                </h5>
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <th class="bg-light w-50">Original Booking Fare Paid</th>
+                                <td class="fw-bold">{{ booking.total_fare | currency }}</td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light text-danger">Cancellation Charge Deducted</th>
+                                <td class="text-danger fw-bold">- {{ fee | currency }}</td>
+                            </tr>
+                            <tr class="table-success">
+                                <th class="fs-5">Net Refund Disbursed to Passenger</th>
+                                <td class="fs-5 fw-bold text-success">{{ refund | currency }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- CONFIRMATION FORM -->
+                <form method="POST" action="{{ url_for('cancellations.cancel_process', pnr=booking.pnr_number) }}">
+                    <div class="mb-4">
+                        <label for="reason" class="form-label fw-semibold">Reason for Cancellation</label>
+                        <select name="reason" id="reason" class="form-select" required>
+                            <option value="Change of travel plans">Change of travel plans</option>
+                            <option value="Passenger ill / medical emergency">Passenger ill / medical emergency</option>
+                            <option value="Booked alternative conveyance">Booked alternative conveyance</option>
+                            <option value="Personal / official exigency">Personal / official exigency</option>
+                        </select>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('bookings.booking_detail', pnr=booking.pnr_number) }}" class="btn btn-outline-secondary">
+                            <i class="fa-solid fa-arrow-left me-1"></i> Keep Reservation
+                        </a>
+                        <button type="submit" class="btn btn-danger btn-lg px-4" onclick="return confirm('Are you sure you want to cancel this reservation and release the seat?');">
+                            <i class="fa-solid fa-trash-can me-1"></i> Confirm Ticket Cancellation
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

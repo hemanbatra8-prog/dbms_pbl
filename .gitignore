@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Temporary office lock files
+~$*
+.DS_Store
+*.log
+

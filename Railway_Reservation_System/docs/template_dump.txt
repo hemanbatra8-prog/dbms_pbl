@@ -1,0 +1,515 @@
+=== PARAGRAPHS ===
+[0] (Heading 2) REPORT PREPARATION GUIDELINES
+[1] (Normal) These guidelines are provided to keep all individual PBL reports concise and consistent. They may be removed from the final submitted report after formatting and content checks are completed.
+[2] (List Bullet) Page setup: Use A4 paper with 1-inch (2.54 cm) margins on all sides.
+[3] (List Bullet) Font and headings: Use Times New Roman: 16 pt bold uppercase for main chapter headings, 14 pt bold for section/subsection headings, and 12 pt for body text. Use Courier New 10-11 pt for SQL/code.
+[4] (List Bullet) Paragraph format: Use justified body text with 1.5 line spacing and consistent paragraph spacing. Avoid unnecessary blank lines.
+[5] (List Bullet) Report structure: Follow the prescribed chapter sequence. Do not add unrelated chapters or repeat the same content in multiple sections.
+[6] (List Bullet) Template cleanup: Replace all placeholders with project-specific content and remove instructional text, unused rows, unused acronyms, and empty placeholders before final submission.
+[7] (List Bullet) Recommended length: Keep the main report concise, normally about 20-30 pages excluding appendices; use additional pages only when the project genuinely requires them.
+[8] (List Bullet) Abstract and keywords: Write a 150-200 word abstract as one paragraph and provide 4-6 specific keywords. Do not include citations, figures, tables or code in the abstract.
+[9] (List Bullet) Present a precise problem statement, measurable objectives, scope/assumptions, solution strategy, functional requirements and one final approved ER diagram.
+[10] (List Bullet) Show the logical relational schema, keys and integrity constraints, important functional dependencies, normalization up to 3NF, data dictionary, representative DDL and sample data. Keep the complete SQL script in Appendix A.
+[11] (List Bullet) Demonstrate how the Java/Python application uses the logical database design through database connectivity, module-to-table mapping, CRUD operations, business-rule validation, reports, application screens and test results.
+[12] (List Bullet) ER diagram quality: Ensure the ER diagram is readable and consistent with the final relational schema. Entity names, keys, relationships and cardinalities should match the implemented design.
+[13] (List Bullet) Tables: Number tables consecutively in order of first appearance and place the table number and title above each table, for example, “Table 3. Functional Requirements”.
+[14] (List Bullet) Figures: Number figures consecutively in order of first appearance and place the figure number and caption below each figure, for example, “Figure 2. Login Screen”.
+[15] (List Bullet) Cross-references: Refer to every table and figure in the main text before or near its first appearance. Update the List of Tables and List of Figures after captions are final.
+[16] (List Bullet) Screenshots: Use clear, cropped and labelled screenshots showing only relevant application content. Include evidence of data entry, search/display, update or transaction processing, and at least one report/output.
+[17] (List Bullet) Testing: Include meaningful positive and negative test cases. Expected and actual results should be specific, and the status should reflect the observed outcome.
+[18] (List Bullet) References: Use IEEE style. Cite sources in the text using [n], number references in order of first appearance, and include only sources actually consulted and cited. Remove the illustrative reference examples before final submission.
+[19] (List Bullet) Appendices: Place the complete database script, source-code/repository reference and supplementary outputs in the appendices rather than expanding the main report with lengthy code.
+[20] (List Bullet) Final submission: Check spelling, numbering, page consistency, captions, lists, references and repository access. A suggested file name is RollNumber_Name_DBMS_PBL_Report.docx (and PDF if requested).
+[21] (Normal) 
+[22] (Normal) 
+[23] (Normal) 
+[24] (Normal) 
+[25] (Normal) 
+[26] (Normal) 
+[27] (Normal) 
+[28] (Normal) 
+[29] (Normal) 
+[30] (Normal) 
+[31] (Normal) 
+[32] (Normal) 
+[33] (Normal) 
+[34] (Normal) 
+[35] (Normal) 
+[36] (Normal) 
+[37] (Normal) 
+[38] (Normal) 
+[39] (Normal) 
+[40] (Normal) 
+[41] (Normal) 
+[42] (Normal) 
+[43] (Normal) 
+[44] (Normal) 
+[45] (Normal) 
+[46] (Normal) 
+[47] (Normal) 
+[48] (Normal) 
+[49] (Normal) 
+[50] (Normal) DATABASE MANAGEMENT SYSTEMS
+[51] (Normal) PROJECT-BASED LEARNING (PBL) REPORT
+[52] (Normal) Small Database Application Development using Java / Python
+[53] (Normal) 
+[54] (Normal) 
+[55] (Normal) PROJECT TITLE
+[56] (Normal) 
+[57] (Normal) 
+[58] (Normal) 
+[59] (Normal) 
+[60] (Normal) Submitted by
+[61] (Normal) 
+[62] (Heading 1) ACKNOWLEDGEMENT
+[63] (Normal) 
+[64] (Normal) I express my sincere gratitude to Woxsen University, School of Technology, for providing me with the opportunity to undertake this Project-Based Learning (PBL) activity as part of the Database Management Systems (DBMS) course.
+[65] (Normal) I thank my course faculty, Name of the Faculty, for the guidance, suggestions, and support throughout the design and development of this project. The guidance helped me understand the practical application of database concepts such as ER modelling, relational schema design, normalization, SQL, constraints, queries, and database application development.
+[66] (Normal) This PBL activity has strengthened my understanding of DBMS concepts and provided valuable experience in applying them to a real-world problem.
+[67] (Normal) 
+[68] (Heading 1) 
+[69] (Heading 1) 
+[70] (Heading 1) 
+[71] (Heading 1) 
+[72] (Heading 1) 
+[73] (Heading 1) 
+[74] (Heading 1) 
+[75] (Heading 1) 
+[76] (Heading 1) 
+[77] (Heading 1) 
+[78] (Heading 1) 
+[79] (Heading 1) 
+[80] (Heading 1) 
+[81] (Normal) 
+[82] (Heading 1) UNDERTAKING
+[83] (Normal) 
+[84] (Normal) I hereby declare that the project entitled “[Project Title]”, submitted as part of the Project-Based Learning activity for the Database Management Systems (DBMS) course, is my individual work carried out under the guidance of the course faculty.
+[85] (Normal) I undertake that the project report, database design, SQL scripts, application source code, results, and supporting materials submitted by me have been prepared for academic purposes. Wherever information, ideas, tools, datasets, or other resources have been referred to, appropriate acknowledgement has been provided.
+[86] (Normal) I further undertake that I am responsible for the correctness and authenticity of the work submitted and that I have followed the academic and project guidelines prescribed by the University.
+[87] (Normal) 
+[88] (Normal) 
+[89] (Normal) 
+[90] (Normal) 
+[91] (Normal) 
+[92] (Normal) 
+[93] (Normal) 
+[94] (Normal) 
+[95] (Normal) 
+[96] (Normal) 
+[97] (Normal) 
+[98] (Normal) 
+[99] (Normal) 
+[100] (Normal) 
+[101] (Normal) 
+[102] (Normal) 
+[103] (Normal) 
+[104] (Normal) 
+[105] (Heading 1) TABLE OF CONTENTS
+[106] (Normal) 
+[107] (Normal) Use this common structure for all DBMS PBL projects. Enter or update the page numbers after completing the report.
+[108] (Normal) 
+[109] (Heading 1) LIST OF TABLES
+[110] (Normal) 
+[111] (Normal) Update this list after finalising the report. Use Word References > Insert Caption for every table and References > Insert Table of Figures with the caption label “Table”.
+[112] (Heading 1) LIST OF FIGURES
+[113] (Normal) 
+[114] (Normal) Update this list after finalising the report. Use Word References > Insert Caption for every figure and References > Insert Table of Figures with the caption label “Figure”.
+[115] (Heading 1) LIST OF ACRONYMS
+[116] (Normal) 
+[117] (Normal) Retain only the acronyms used in the report and add any project-specific acronyms. All the Acronyms to be sorted order.
+[118] (Heading 1) 
+[119] (Normal) 
+[120] (Normal) 
+[121] (Normal) 
+[122] (Normal) 
+[123] (Normal) 
+[124] (Normal) 
+[125] (Normal) 
+[126] (Normal) 
+[127] (Normal) 
+[128] (Normal) 
+[129] (Normal) 
+[130] (Normal) 
+[131] (Normal) 
+[132] (Normal) 
+[133] (Normal) 
+[134] (Normal) 
+[135] (Heading 1) ABSTRACT
+[136] (Normal) 
+[137] (Normal) Write the abstract as one self-contained paragraph of about 150-200 words. Do not use bullets, tables, screenshots, citations or code in the abstract.
+[138] (Normal) [Write the final abstract here.]
+[139] (Heading 2) KEYWORDS
+[140] (Normal) Provide 4-6 specific keywords separated by commas. Include the application domain and important technical terms. Avoid complete sentences and overly general words.
+[141] (Normal) Keywords: [Relational Database, ER Diagram, Normalization, SQL, Java/Python, Project-domain keyword]
+[142] (Heading 1) CHAPTER 1
+[143] (Heading 1) PROBLEM STATEMENT, SOLUTION STRATEGY AND ER DIAGRAM
+[144] (Normal) 
+[145] (Normal) This chapter should represent the evidence presented in Review-I. Keep the discussion specific to the allotted project scenario.
+[146] (Heading 2) 
+[147] (Heading 2) 1.1 Problem Statement
+[148] (Normal) Describe the current problem, affected users/stakeholders, limitations of the existing/manual process, and the need for the proposed database application.
+[149] (Normal) [Problem statement - approximately 1 to 2 paragraphs.]
+[150] (Heading 2) 
+[151] (Heading 2) 1.2 Objectives
+[152] (Normal) State 3-5 measurable objectives beginning with action verbs such as design, develop, implement, validate, automate, track or generate.
+[153] (List Bullet) [Objective 1]
+[154] (List Bullet) [Objective 2]
+[155] (List Bullet) [Objective 3]
+[156] (List Bullet) [Objective 4]
+[157] (Heading 2) 
+[158] (Heading 2) 1.3 Scope and Assumptions
+[159] (Caption) Table 1. Scope and Assumptions
+[160] (Heading 2) 
+[161] (Heading 2) 1.4 Proposed Solution Strategy
+[162] (Normal) Explain how the proposed solution will address the identified problem. Describe the intended users, major modules, workflow, key business rules and expected outputs.
+[163] (Caption) Table 2. Proposed Solution Strategy
+[164] (Heading 2) 
+[165] (Heading 2) 1.5 Functional Requirements
+[166] (Caption) Table 3. Functional Requirements
+[167] (Heading 2) 
+[168] (Heading 2) 1.6 Entity-Relationship Diagram (ERD)
+[169] (Normal) Insert the approved ER diagram. It should show entities, major attributes, primary keys, relationships, cardinalities and participation constraints where applicable.
+[170] (Normal) [Insert approved ER diagram here]
+[171] (Caption) Figure 1. Entity-Relationship Diagram of the Proposed System
+[172] (Heading 2) 
+[173] (Heading 2) 1.7 Entity and Relationship Summary
+[174] (Caption) Table 4. Entity and Relationship Summary
+[175] (Normal) 
+[176] (Heading 1) CHAPTER 2
+[177] (Heading 1) LOGICAL DATABASE DESIGN
+[178] (Normal) 
+[179] (Normal) This chapter should document how the approved ER model was converted into a correct relational database design and verified through a database prototype.
+[180] (Heading 2) 2.1 Relational Schema
+[181] (Normal) List every relation derived from the ER model. Identify primary and foreign keys clearly.
+[182] (Caption) Table 5. Relational Schema
+[183] (Heading 2) 
+[184] (Heading 2) 2.2 Keys and Integrity Constraints
+[185] (Caption) Table 6. Keys and Integrity Constraints
+[186] (Normal) Include PRIMARY KEY, FOREIGN KEY, UNIQUE, NOT NULL, CHECK, DEFAULT and suitable referential actions where applicable.
+[187] (Heading 2) 
+[188] (Heading 2) 2.3 Functional Dependencies
+[189] (Normal) List the important functional dependencies used to justify normalization.
+[190] (Normal) [Example format: Key -> non-key attributes. Add only dependencies relevant to your design.]
+[191] (Heading 2) 
+[192] (Heading 2) 2.4 Normalization 
+[193] (Caption) Table 7. Normalization Status up to 3NF
+[194] (Heading 2) 
+[195] (Heading 2) 2.5 Data Dictionary
+[196] (Normal) Prepare the data dictionary for all tables. Add rows as required.
+[197] (Caption) Table 8. Data Dictionary
+[198] (Heading 2) 
+[199] (Heading 2) 2.6 Implementation of Logical Design: DDL and Sample Data
+[200] (Normal) Mention the DBMS used, provide representative CREATE TABLE statements with constraints, and show representative sample records. Attach the complete SQL script in Appendix A.
+[201] (Caption) Table 9. Database Implementation Environment
+[202] (Normal) [Insert representative DDL snippets and sample data / screenshots here.]
+[203] (Normal) 
+[204] (Normal) 
+[205] (Normal) 
+[206] (Normal) 
+[207] (Normal) 
+[208] (Normal) 
+[209] (Normal) 
+[210] (Normal) 
+[211] (Normal) 
+[212] (Normal) 
+[213] (Normal) 
+[214] (Normal) 
+[215] (Normal) 
+[216] (Normal) 
+[217] (Normal) 
+[218] (Normal) 
+[219] (Normal) 
+[220] (Normal) 
+[221] (Normal) 
+[222] (Normal) 
+[223] (Normal) 
+[224] (Normal) 
+[225] (Normal) 
+[226] (Normal) 
+[227] (Normal) 
+[228] (Normal) 
+[229] (Normal) 
+[230] (Normal) 
+[231] (Heading 1) CHAPTER 3
+[232] (Heading 1) APPLICATION DEVELOPMENT USING LOGICAL DATABASE DESIGN
+[233] (Normal) 
+[234] (Normal) This chapter should show how the approved logical database design is used by the final Java/Python application. The application must interact with the database rather than use isolated/static data.
+[235] (Heading 2) 3.1 Application Overview
+[236] (Normal) Briefly explain the users, application purpose, major functions and how the application uses the database.
+[237] (Normal) [Application overview - approximately 1 paragraph.]
+[238] (Heading 2) 
+[239] (Heading 2) 3.2 Development Environment and Database Connectivity
+[240] (Caption) Table 10. Application Development Environment
+[241] (Heading 2) 
+[242] (Heading 2) 3.3 Application Modules and Database Mapping
+[243] (Caption) Table 11. Application Module-to-Database Mapping
+[244] (Heading 2) 3.4 CRUD Operations
+[245] (Caption) Table 12. CRUD Operations
+[246] (Heading 2) 
+[247] (Heading 2) 3.5 Business Rules, Validation and Error Handling
+[248] (Normal) Explain how the application prevents invalid input and database-rule violations. Mention parameterised queries, exception handling, confirmation for destructive actions, and transaction rollback where relevant.
+[249] (Caption) Table 13. Business Rules, Validation and Error Handling
+[250] (Heading 2) 
+[251] (Heading 2) 3.6 Reports and Database Operations
+[252] (Caption) Table 14. Reports and Database Operations
+[253] (Heading 2) 3.7 Application Screens
+[254] (Normal) Insert the important application screenshots. Place each figure caption below the screenshot using the format “Figure X. Figure Title”. Include screens that demonstrate data entry, search/display, update, a project-specific transaction and at least one report/output.
+[255] (Normal) [Insert application screenshot here]
+[256] (Caption) Figure 2. [Application Screen / Output Title]
+[257] (Normal) [Insert application screenshot here]
+[258] (Caption) Figure 3. [Application Screen / Output Title]
+[259] (Normal) [Insert application screenshot here]
+[260] (Caption) Figure 4. [Application Screen / Output Title]
+[261] (Normal) [Insert application screenshot here]
+[262] (Caption) Figure 5. [Application Screen / Output Title]
+[263] (Caption) 
+[264] (Caption) 3.8 Testing and Results
+[265] (Caption) Table 15. Test Cases
+[266] (Normal) Summarize the key results after the test-case table. State whether the application correctly uses the designed database and enforces the important business rules.
+[267] (Normal) [Key results and observations.]
+[268] (Normal) 
+[269] (Normal) 
+[270] (Normal) 
+[271] (Normal) 
+[272] (Normal) 
+[273] (Normal) 
+[274] (Normal) 
+[275] (Normal) 
+[276] (Normal) CHAPTER 4
+[277] (Normal) CONCLUSION
+[278] (Normal) 
+[279] (Normal) Summarize the problem addressed, database design completed, application developed, important functions implemented, and the main learning/outcome. Keep the conclusion concise.
+[280] (Normal) [Conclusion - approximately 1 to 2 paragraphs.]
+[281] (Heading 2) 
+[282] (Heading 2) 4.1 Limitations and Future Enhancements
+[283] (Normal) Mention genuine limitations of the current small-scope application and realistic enhancements that could be implemented later.
+[284] (List Bullet) [Limitation / Future enhancement 1]
+[285] (List Bullet) [Limitation / Future enhancement 2]
+[286] (List Bullet) [Limitation / Future enhancement 3]
+[287] (Heading 1) 
+[288] (Normal) 
+[289] (Normal) 
+[290] (Normal) 
+[291] (Normal) 
+[292] (Normal) 
+[293] (Normal) 
+[294] (Normal) 
+[295] (Normal) 
+[296] (Normal) 
+[297] (Normal) 
+[298] (Normal) 
+[299] (Normal) 
+[300] (Normal) 
+[301] (Normal) 
+[302] (Normal) 
+[303] (Normal) 
+[304] (Normal) 
+[305] (Normal) 
+[306] (Heading 1) REFERENCES
+[307] (Normal) 
+[308] (List Paragraph) [Replace with an actual source cited in the report.]
+[309] (List Paragraph) [Replace with an actual source cited in the report.]
+[310] (List Paragraph) [Replace with an actual source cited in the report.]
+[311] (List Paragraph) [Replace with an actual source cited in the report.]
+[312] (List Paragraph) [Replace with an actual source cited in the report.]
+[313] (List Paragraph) [Replace with an actual source cited in the report.]
+[314] (Normal) 
+[315] (Normal) Use IEEE reference style throughout the report. Cite sources in the order in which they first appear in the text and use the same number for repeated citations.
+[316] (Heading 2) 5.1 IEEE In-Text Citation Guidelines
+[317] (List Bullet) Use square brackets for citations: [1], [2], [3].
+[318] (List Bullet) For multiple non-consecutive sources, cite them separately, for example [2], [5], [8].
+[319] (List Bullet) For a consecutive range, use a range such as [3]-[6].
+[320] (List Bullet) Place the citation number before punctuation where appropriate, for example: “Normalization reduces update anomalies [4].”
+[321] (List Bullet) Number references by first appearance, not alphabetically, and do not change a reference number when the same source is cited again.
+[322] (Heading 2) 5.2 IEEE Reference Formats and Examples
+[323] (Normal) Book: [n] A. A. Author, Title of Book, xth ed. City, Country: Publisher, year.
+[324] (Normal) Example: [1] A. A. Author, Database Systems: Concepts and Design, 3rd ed. City, Country: Publisher, 2025.
+[325] (Normal) Chapter in an Edited Book: [n] A. A. Author, “Chapter title,” in Title of Book, xth ed., A. Editor, Ed. City, Country: Publisher, year, pp. xx-xx.
+[326] (Normal) Example: [2] A. A. Author, “Relational database design,” in Advances in Database Systems, B. B. Editor, Ed. City, Country: Publisher, 2024, pp. 25-48.
+[327] (Normal) Journal Paper: [n] A. A. Author and B. B. Author, “Title of paper,” Journal Title, vol. x, no. x, pp. xx-xx, Month year, doi: xx.xxxx/xxxxx.
+[328] (Normal) Example: [3] A. A. Author and B. B. Author, “A database approach for transaction management,” Journal of Database Research, vol. 12, no. 2, pp. 101-112, Apr. 2025, doi: xx.xxxx/xxxxx.
+[329] (Normal) Conference Paper: [n] A. A. Author, B. B. Author, and C. C. Author, “Title of paper,” in Proc. Name of Conference, City, Country, year, pp. xx-xx, doi: xx.xxxx/xxxxx.
+[330] (Normal) Example: [4] A. A. Author and B. B. Author, “Design of a compact database application,” in Proc. International Conference on Computing Systems, City, Country, 2025, pp. 120-125.
+[331] (Normal) Thesis / Dissertation: [n] A. A. Author, “Title of thesis,” M.Tech. thesis / Ph.D. dissertation, Dept., Institution, City, Country, year.
+[332] (Normal) Example: [5] A. A. Author, “Database-driven application design,” M.Tech. thesis, Dept. of Computer Science, University Name, City, Country, 2025.
+[333] (Normal) Technical Report / Standard: [n] Organization or A. A. Author, Title of Report or Standard, report/standard no., Organization, City, Country, year.
+[334] (Normal) Example: [6] Organization Name, Database Application Security Guidelines, Tech. Rep. TR-2025-04, City, Country, 2025.
+[335] (Normal) Web Page: [n] Author/Organization, “Title of web page,” Website Name. Accessed: Month day, year. [Online]. Available: URL
+[336] (Normal) Example: [7] Organization Name, “Database documentation,” Website Name. Accessed: Sep. 29, 2026. [Online]. Available: https://example.org/documentation
+[337] (Normal) Online Software Documentation / Dataset: [n] Organization/Author, Title of Documentation or Dataset, version (if available). Accessed: Month day, year. [Online]. Available: URL
+[338] (Normal) Example: [8] Organization Name, Product Reference Manual, ver. X.Y. Accessed: Sep. 29, 2026. [Online]. Available: https://example.org/manual
+[339] (Normal) Reference-writing notes: Use the exact bibliographic details of the source actually consulted. Include DOI information for journal/conference papers when available. For online sources, provide the access date and working URL. Do not list uncited sources merely to increase the number of references.
+[340] (Heading 1) 
+[341] (Heading 1) 
+[342] (Heading 1) 
+[343] (Heading 1) 
+[344] (Normal) 
+[345] (Normal) 
+[346] (Normal) 
+[347] (Normal) 
+[348] (Normal) 
+[349] (Normal) 
+[350] (Normal) 
+[351] (Normal) 
+[352] (Normal) 
+[353] (Normal) 
+[354] (Normal) 
+[355] (Normal) 
+[356] (Normal) 
+[357] (Heading 1) APPENDICES
+[358] (Heading 2) 
+[359] (Heading 2) APPENDIX A - COMPLETE DATABASE SCRIPT
+[360] (Normal) Attach the complete DDL/DML/query script or provide the submitted file name.
+[361] (Normal) [Database script / file reference]
+[362] (Heading 2) 
+[363] (Heading 2) APPENDIX B - APPLICATION SOURCE CODE
+[364] (Normal) Provide the source-code folder/repository reference. Do not paste the entire application code into the main report.
+[365] (Normal) [Source-code / repository reference]
+[366] (Heading 2) 
+[367] (Heading 2) APPENDIX C - ADDITIONAL TEST DATA AND OUTPUTS
+[368] (Normal) Include any additional test data, screenshots, reports or supporting material that is useful but not essential in the main report.
+[369] (Normal) [Additional supporting material]
+
+=== TABLES ===
+
+--- Table 0 (1 rows, 2 cols) ---
+Row 0: SCHOOL OF TECHNOLOGY | 
+
+--- Table 1 (1 rows, 1 cols) ---
+Row 0: 
+
+--- Table 2 (5 rows, 2 cols) ---
+Row 0: Program | 
+Row 1: Section | 
+Row 2: Faculty | 
+Row 3: Date of Submission | 
+
+--- Table 3 (2 rows, 4 cols) ---
+Row 0: Roll Number | Student Name | Mobile | Email ID
+Row 1:  |  |  | 
+
+--- Table 4 (4 rows, 5 cols) ---
+Row 0:  |  |  |  | Signature
+Row 1: Date | : |  | Name: | 
+Row 2: Place | : |  | Roll Number: | 
+Row 3:  |  |  | Program: | 
+
+--- Table 5 (33 rows, 2 cols) ---
+Row 0: Contents | Page No.
+Row 1: Abstract | 
+Row 2: LIST OF TABLES | 
+Row 3: LIST OF FIGURES | 
+
+--- Table 6 (16 rows, 3 cols) ---
+Row 0: Table No. | Table Title | Page No.
+Row 1: Table 1 | Scope and Assumptions | 
+Row 2: Table 2 | Proposed Solution Strategy | 
+Row 3: Table 3 | Functional Requirements | 
+
+--- Table 7 (6 rows, 3 cols) ---
+Row 0: Figure No. | Figure Title | Page No.
+Row 1: Figure 1 | Entity-Relationship Diagram of the Proposed System | 
+Row 2: Figure 2 | [Application Screen / Output Title] | 
+Row 3: Figure 3 | [Application Screen / Output Title] | 
+
+--- Table 8 (15 rows, 2 cols) ---
+Row 0: Acronym | Expansion
+Row 1:  | 
+Row 2:  | 
+Row 3:  | 
+
+--- Table 9 (6 rows, 2 cols) ---
+Row 0: Part of Abstract | What to Write
+Row 1: Problem / Context | State the real-world problem and why a database-based solution is needed (2-3 sentences).
+Row 2: Objective | State the main objective of the project in one clear sentence.
+Row 3: Solution Approach | Briefly mention the ER model, logical database design/normalization, DBMS used, and Java/Python application approach.
+
+--- Table 10 (4 rows, 2 cols) ---
+Row 0: Item | Description
+Row 1: In Scope | 
+Row 2: Out of Scope / Exclusions | 
+Row 3: Assumptions | 
+
+--- Table 11 (6 rows, 2 cols) ---
+Row 0: Solution Element | Project-Specific Description
+Row 1: Primary Users / Roles | 
+Row 2: Major Application Modules | 
+Row 3: Proposed Workflow | 
+
+--- Table 12 (6 rows, 3 cols) ---
+Row 0: Req. ID | Functional Requirement | Remarks / Priority
+Row 1: FR-01 |  | 
+Row 2: FR-02 |  | 
+Row 3: FR-03 |  | 
+
+--- Table 13 (7 rows, 3 cols) ---
+Row 0: Entity / Relationship | Major Attributes / Cardinality | Purpose / Rule
+Row 1:  |  | 
+Row 2:  |  | 
+Row 3:  |  | 
+
+--- Table 14 (5 rows, 3 cols) ---
+Row 0: S.No. | Table Name | Purpose
+Row 1: 1 |  | 
+Row 2: 2 |  | 
+Row 3: 3 |  | 
+
+--- Table 15 (11 rows, 4 cols) ---
+Row 0: Table Name | Key / Constraint | Attribute(s) | Business Rule Enforced
+Row 1: Table Name 1 | Primary Key |  | 
+Row 2: Table Name 1 | Foreign Key |  | 
+Row 3: Table Name 1 | Not Null |  | 
+
+--- Table 16 (7 rows, 6 cols) ---
+Row 0: Relation Name | 1NF | 2NF | 3NF | BCNF | Remarks / Decomposition
+Row 1:  |  |  |  |  | 
+Row 2:  |  |  |  |  | 
+Row 3:  |  |  |  |  | 
+
+--- Table 17 (10 rows, 5 cols) ---
+Row 0: Table | Attribute | Data Type | Key / Constraint | Description
+Row 1:  |  |  |  | 
+Row 2:  |  |  |  | 
+Row 3:  |  |  |  | 
+
+--- Table 18 (5 rows, 2 cols) ---
+Row 0: Item | Details
+Row 1: DBMS | [MySQL / PostgreSQL / SQLite]
+Row 2: DBMS Version | [Version]
+Row 3: Number of Tables | [Count]
+
+--- Table 19 (7 rows, 2 cols) ---
+Row 0: Item | Details
+Row 1: Programming Language | [Java / Python]
+Row 2: DBMS | [MySQL / PostgreSQL / SQLite]
+Row 3: IDE / Framework / GUI Toolkit | [Tool names]
+
+--- Table 20 (8 rows, 4 cols) ---
+Row 0: Module / Screen | Purpose | Tables Used | Main Operations
+Row 1:  |  |  | 
+Row 2:  |  |  | 
+Row 3:  |  |  | 
+
+--- Table 21 (5 rows, 4 cols) ---
+Row 0: Operation | Application Feature / Screen | Table(s) Affected | Evidence
+Row 1: Create |  |  | 
+Row 2: Read / Search |  |  | 
+Row 3: Update |  |  | 
+
+--- Table 22 (6 rows, 3 cols) ---
+Row 0: Rule / Validation | How Implemented | Evidence / Message
+Row 1:  |  | 
+Row 2:  |  | 
+Row 3:  |  | 
+
+--- Table 23 (7 rows, 3 cols) ---
+Row 0: Report / Operation | SQL / Database Concept Used | Application Output
+Row 1:  |  | 
+Row 2:  |  | 
+Row 3:  |  | 
+
+--- Table 24 (8 rows, 6 cols) ---
+Row 0: Test ID | Feature | Input / Action | Expected Result | Actual Result | Status
+Row 1: TC-01 |  |  |  |  | 
+Row 2: TC-02 |  |  |  |  | 
+Row 3: TC-03 |  |  |  |  | 

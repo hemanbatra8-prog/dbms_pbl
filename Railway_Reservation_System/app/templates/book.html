@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Book Ticket | Railway Reservation System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h4 class="fw-bold mb-0 text-navy" style="color: var(--navy-primary);">
+                    <i class="fa-solid fa-ticket text-primary me-2"></i> Confirm Ticket Reservation
+                </h4>
+                {% if run %}
+                <span class="badge bg-primary fs-6">{{ run.train.train_number }} - {{ run.train.train_name }}</span>
+                {% endif %}
+            </div>
+
+            <div class="card-body p-4">
+                {% if run and origin_stn and dest_stn %}
+                <!-- JOURNEY OVERVIEW BANNER -->
+                <div class="bg-light border rounded-3 p-3 mb-4">
+                    <div class="row text-center text-md-start">
+                        <div class="col-md-4 mb-2 mb-md-0">
+                            <small class="text-muted text-uppercase fw-semibold">Train Service</small>
+                            <div class="fw-bold text-dark">{{ run.train.train_name }} ({{ run.train.train_number }})</div>
+                            <small class="text-muted">{{ run.train.train_type }}</small>
+                        </div>
+                        <div class="col-md-4 mb-2 mb-md-0">
+                            <small class="text-muted text-uppercase fw-semibold">Route Segment</small>
+                            <div class="fw-bold text-primary">{{ origin_stn.station_code }} → {{ dest_stn.station_code }}</div>
+                            <small class="text-muted">{{ origin_stn.city }} to {{ dest_stn.city }}</small>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted text-uppercase fw-semibold">Journey Date</small>
+                            <div class="fw-bold text-dark">{{ run.run_date.strftime('%A, %d %B %Y') }}</div>
+                            <small class="badge bg-success">Status: SCHEDULED</small>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('bookings.book') }}">
+                    <input type="hidden" name="run_id" id="book-run-id" value="{{ run.run_id }}">
+                    <input type="hidden" name="origin_id" id="book-origin-id" value="{{ origin_stn.station_id }}">
+                    <input type="hidden" name="dest_id" id="book-dest-id" value="{{ dest_stn.station_id }}">
+
+                    <div class="row g-3 mb-4">
+                        <!-- PASSENGER SELECTION -->
+                        <div class="col-md-12">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label for="passenger_id" class="form-label fw-semibold mb-0">Select Passenger Profile</label>
+                                <a href="{{ url_for('passengers.manage_passengers') }}" target="_blank" class="small text-decoration-none">
+                                    <i class="fa-solid fa-user-plus me-1"></i> Register New Passenger
+                                </a>
+                            </div>
+                            <select name="passenger_id" id="passenger_id" class="form-select form-select-lg" required>
+                                <option value="">-- Choose Registered Passenger --</option>
+                                {% for p in passengers %}
+                                <option value="{{ p.passenger_id }}">
+                                    {{ p.full_name }} (Age: {{ p.age }}, {{ p.gender }}, {{ p.id_card_type }}: {{ p.id_card_number }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- CLASS SELECTION -->
+                        <div class="col-md-6">
+                            <label for="book-class-select" class="form-label fw-semibold">Travel Class</label>
+                            <select name="travel_class" id="book-class-select" class="form-select" required>
+                                <option value="CC" {% if travel_class == 'CC' %}selected{% endif %}>AC Chair Car (CC)</option>
+                                <option value="3A" {% if travel_class == '3A' %}selected{% endif %}>AC 3 Tier (3A)</option>
+                                <option value="2A" {% if travel_class == '2A' %}selected{% endif %}>AC 2 Tier (2A)</option>
+                                <option value="1A" {% if travel_class == '1A' %}selected{% endif %}>AC First Class (1A)</option>
+                                <option value="SL" {% if travel_class == 'SL' %}selected{% endif %}>Sleeper Class (SL)</option>
+                            </select>
+                        </div>
+
+                        <!-- SEAT PREFERENCE -->
+                        <div class="col-md-6">
+                            <label for="book-seat-select" class="form-label fw-semibold">Seat / Berth Preference</label>
+                            <select name="preferred_seat_id" id="book-seat-select" class="form-select">
+                                <option value="">-- Auto-Allocate Optimal Berth --</option>
+                                {% for s in available_seats %}
+                                <option value="{{ s.seat_id }}">
+                                    Seat {{ s.coach.coach_code }}-{{ s.seat_number }} ({{ s.berth_type }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">If preferred seat is unavailable, next free berth is allocated.</small>
+                        </div>
+                    </div>
+
+                    <!-- FARE BREAKDOWN CARD -->
+                    <div class="card bg-light border-0 rounded-3 p-3 mb-4">
+                        <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-calculator me-1 text-primary"></i> Relational Fare Calculation</h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted">Formula: Base Fare + (Distance × Rate/km) + Reservation Charge</small>
+                                <div class="small text-muted">Applied Fare Rule: <strong>{{ run.train.train_type }} ({{ travel_class }})</strong></div>
+                            </div>
+                            <div class="text-end">
+                                <span class="fs-4 fw-bold text-success">{{ fare_amount | currency }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SIMULATED PAYMENT -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Payment Simulation (No Real Money Debited)</label>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <div class="form-check border rounded p-2 bg-white">
+                                    <input class="form-check-input ms-1" type="radio" name="payment_method" id="pay_upi" value="SIMULATED_UPI" checked>
+                                    <label class="form-check-label ms-2 fw-semibold" for="pay_upi">
+                                        <i class="fa-solid fa-qrcode text-primary me-1"></i> UPI
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check border rounded p-2 bg-white">
+                                    <input class="form-check-input ms-1" type="radio" name="payment_method" id="pay_card" value="SIMULATED_CARD">
+                                    <label class="form-check-label ms-2 fw-semibold" for="pay_card">
+                                        <i class="fa-solid fa-credit-card text-success me-1"></i> Debit/Credit Card
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check border rounded p-2 bg-white">
+                                    <input class="form-check-input ms-1" type="radio" name="payment_method" id="pay_nb" value="SIMULATED_NETBANKING">
+                                    <label class="form-check-label ms-2 fw-semibold" for="pay_nb">
+                                        <i class="fa-solid fa-building-columns text-info me-1"></i> Net Banking
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-rail-primary btn-lg py-3 fw-bold">
+                            <i class="fa-solid fa-lock me-2"></i> Confirm Booking & Process Simulated Payment
+                        </button>
+                    </div>
+                </form>
+
+                {% else %}
+                <!-- DIRECT SELECTION SELECTOR IF ACCESSED DIRECTLY -->
+                <div class="text-center py-4">
+                    <p class="text-muted">Please search for trains first to select an origin, destination, and train run.</p>
+                    <a href="{{ url_for('trains.search_trains') }}" class="btn btn-rail-primary">
+                        <i class="fa-solid fa-magnifying-glass me-1"></i> Search Trains First
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

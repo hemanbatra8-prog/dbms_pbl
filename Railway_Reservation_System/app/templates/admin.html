@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Schema Administration & System Status{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-1" style="color: var(--navy-primary);">Database Administration & Schema Health</h2>
+        <p class="text-muted mb-0">Inspect table row populations, relational engine status, and reseed demo datasets.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-navy" style="color: var(--navy-primary);">
+                    <i class="fa-solid fa-table text-primary me-2"></i> Relational Entities & Active Row Counts
+                </h5>
+                <span class="badge bg-primary">Dialect: {{ engine_name|upper }}</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Entity Table</th>
+                            <th>3NF Role & Normalization Scope</th>
+                            <th class="text-end">Record Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in table_stats %}
+                        <tr>
+                            <td class="fw-bold text-dark">
+                                <i class="fa-solid fa-table-cells text-muted me-2"></i> {{ t.name }}
+                            </td>
+                            <td class="text-muted small">
+                                {% if t.name == 'Stations' %}Fixed geographical terminal definitions
+                                {% elif t.name == 'Routes' %}Pre-configured station sequences with cumulative km
+                                {% elif t.name == 'Trains' %}Static locomotive and train schedule catalog
+                                {% elif t.name == 'Train Stops' %}Ordered stops with unique (route_id, stop_sequence)
+                                {% elif t.name == 'Train Runs (Schedules)' %}Operational calendar date run decoupling (3NF)
+                                {% elif t.name == 'Coaches' %}Rolling stock carriages categorized by travel class
+                                {% elif t.name == 'Seats' %}Physical seat units with berth types
+                                {% elif t.name == 'Passengers' %}Decoupled profile profiles with check constraints
+                                {% elif t.name == 'Fare Rules' %}Deterministic pricing parameters per class
+                                {% elif t.name == 'Bookings' %}Transactional passenger booking records
+                                {% elif t.name == 'Journey Segments' %}Half-open interval seat allocations [origin, dest)
+                                {% elif t.name == 'Waitlist Entries' %}Priority queue ordered by position ASC
+                                {% elif t.name == 'Payments' %}Simulated financial ledger with transaction references
+                                {% elif t.name == 'Cancellations' %}Audit records of fee deductions and refund calculations
+                                {% else %}Database table
+                                {% endif %}
+                            </td>
+                            <td class="text-end fw-bold text-primary">{{ t.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold mb-0 text-navy" style="color: var(--navy-primary);">
+                    <i class="fa-solid fa-rotate text-success me-2"></i> Reset & Seed Demonstration Data
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-3">
+                    Clicking the button below resets all tables and inserts fresh, verified sample records demonstrating:
+                </p>
+                <ul class="small text-muted mb-3 ps-3">
+                    <li>3 Routes & multiple ordered stops</li>
+                    <li>Vande Bharat, Rajdhani & Shatabdi trains</li>
+                    <li><strong>Empirical non-overlapping seat reuse</strong> on Seat C1-1</li>
+                    <li>Active waitlisted booking</li>
+                    <li>Audited ticket cancellation with refund record</li>
+                </ul>
+
+                <form method="POST" action="{{ url_for('admin.reseed_database') }}" onsubmit="return confirm('Are you sure you want to reset and re-seed the entire database? All newly entered records will be replaced with fresh benchmark seed data.');">
+                    <button type="submit" class="btn btn-success w-100 py-2 fw-semibold">
+                        <i class="fa-solid fa-arrows-rotate me-1"></i> Reseed Benchmark Sample Data
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-3 bg-light p-3">
+            <h6 class="fw-bold mb-1"><i class="fa-solid fa-shield-halved me-1 text-primary"></i> Database Engine Details</h6>
+            <div class="small text-muted mb-2">Connected Dialect: <strong>{{ engine_name }}</strong></div>
+            <div class="small text-muted">
+                Foreign key constraints, check constraints, transaction locks, and isolation levels are actively verified.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

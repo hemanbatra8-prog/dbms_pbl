@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}DBMS SQL Reports Hub | Railway Reservation System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-1" style="color: var(--navy-primary);">Relational SQL Analytics & Reports</h2>
+        <p class="text-muted mb-0">Demonstrating advanced joins, aggregations, nested queries, views, and financial reconciliation.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- SIDEBAR NAV FOR 12 REPORTS -->
+    <div class="col-lg-3">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold mb-0 text-navy" style="color: var(--navy-primary);">
+                    <i class="fa-solid fa-list-check me-2 text-primary"></i> 12 Benchmark Reports
+                </h6>
+            </div>
+            <div class="list-group list-group-flush" style="font-size: 0.88rem;">
+                {% for r_id, r_info in report_defs.items() %}
+                <a href="{{ url_for('reports.view_reports', id=r_id) }}" 
+                   class="list-group-item list-group-item-action py-2 px-3 d-flex align-items-center {% if active_id == r_id %}active bg-primary border-primary text-white{% endif %}">
+                    <span class="badge {% if active_id == r_id %}bg-white text-primary{% else %}bg-secondary{% endif %} me-2">#{{ r_id }}</span>
+                    <span class="text-truncate">{{ r_info[0].split(':')[1] if ':' in r_info[0] else r_info[0] }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN REPORT DISPLAY -->
+    <div class="col-lg-9">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-navy" style="color: var(--navy-primary);">
+                    <i class="fa-solid fa-chart-pie text-primary me-2"></i> {{ title }}
+                </h5>
+                <span class="badge bg-light text-dark border">
+                    {{ data|length }} Records Returned
+                </span>
+            </div>
+            <div class="card-body p-4">
+                {% if data and data|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                {% for col in data[0].keys() %}
+                                <th class="text-nowrap text-uppercase small" style="letter-spacing: 0.5px;">
+                                    {{ col.replace('_', ' ') }}
+                                </th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in data %}
+                            <tr>
+                                {% for val in row.values() %}
+                                <td>
+                                    {% if val is none %}
+                                        <span class="text-muted">--</span>
+                                    {% elif val is number and ('revenue' in col or 'amount' in col or 'fare' in col or 'fee' in col) %}
+                                        ₹{{ "%.2f"|format(val) }}
+                                    {% else %}
+                                        {{ val }}
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fa-solid fa-folder-open fs-1 mb-2 text-muted"></i>
+                    <p class="mb-0">No records found for this query under current filters.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

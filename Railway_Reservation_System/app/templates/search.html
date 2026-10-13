@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Train Search & Live Segment Availability{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-11">
+        <!-- SEARCH CARD -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h4 class="fw-bold mb-0" style="color: var(--navy-primary);">
+                    <i class="fa-solid fa-magnifying-glass me-2 text-primary"></i> Search Trains & Segment Availability
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="GET" action="{{ url_for('trains.search_trains') }}" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label for="origin" class="form-label fw-semibold small text-muted">ORIGIN STATION</label>
+                        <select name="origin" id="origin" class="form-select form-select-lg" required>
+                            <option value="">Select Origin...</option>
+                            {% for s in stations %}
+                            <option value="{{ s.station_code }}" {% if origin_code == s.station_code %}selected{% endif %}>
+                                {{ s.station_code }} - {{ s.station_name }} ({{ s.city }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-1 text-center mb-1">
+                        <button type="button" id="btn-swap-stations" class="btn btn-outline-secondary rounded-circle" title="Swap Stations" style="width: 44px; height: 44px;">
+                            <i class="fa-solid fa-right-left"></i>
+                        </button>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="destination" class="form-label fw-semibold small text-muted">DESTINATION STATION</label>
+                        <select name="destination" id="destination" class="form-select form-select-lg" required>
+                            <option value="">Select Destination...</option>
+                            {% for s in stations %}
+                            <option value="{{ s.station_code }}" {% if dest_code == s.station_code %}selected{% endif %}>
+                                {{ s.station_code }} - {{ s.station_name }} ({{ s.city }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="date" class="form-label fw-semibold small text-muted">JOURNEY DATE</label>
+                        <input type="date" name="date" id="date" class="form-control form-control-lg" value="{{ travel_date_str or '2026-10-14' }}" required>
+                    </div>
+
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-rail-primary btn-lg w-100">
+                            <i class="fa-solid fa-search me-1"></i> Find Trains
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- RESULTS SECTION -->
+        {% if results is not none %}
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">
+                    Available Services: <span class="text-primary">{{ origin_code }}</span> → <span class="text-primary">{{ dest_code }}</span> on {{ travel_date_str }}
+                </h5>
+                <span class="badge bg-secondary">{{ results|length }} Trains Found</span>
+            </div>
+
+            {% for train_data in results %}
+            <div class="card border-0 shadow-sm rounded-3 mb-3">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-4 border-end">
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="badge bg-primary me-2">{{ train_data.train_number }}</span>
+                                <h5 class="fw-bold mb-0 text-navy" style="color: var(--navy-primary);">{{ train_data.train_name }}</h5>
+                            </div>
+                            <small class="text-muted d-block">{{ train_data.train_type }}</small>
+                            <div class="mt-2 text-muted small">
+                                <i class="fa-solid fa-route me-1"></i> Segment Distance: <strong>{{ train_data.distance_km }} km</strong>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 text-center border-end">
+                            <div class="d-flex justify-content-around align-items-center">
+                                <div>
+                                    <div class="fs-4 fw-bold text-dark">{{ train_data.departure_time }}</div>
+                                    <div class="small fw-semibold text-muted">{{ origin_code }} (Stop #{{ train_data.origin_stop.stop_sequence }})</div>
+                                </div>
+                                <div><i class="fa-solid fa-arrow-right text-muted mx-2"></i></div>
+                                <div>
+                                    <div class="fs-4 fw-bold text-dark">{{ train_data.arrival_time }}</div>
+                                    <div class="small fw-semibold text-muted">{{ dest_code }} (Stop #{{ train_data.dest_stop.stop_sequence }})</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-5">
+                            <div class="small fw-semibold text-muted mb-2">SEGMENT SEAT AVAILABILITY & FARE</div>
+                            <div class="row g-2">
+                                {% for t_class, avail in train_data.class_availabilities.items() %}
+                                <div class="col-6 col-sm-4">
+                                    <div class="border rounded p-2 text-center bg-light">
+                                        <div class="fw-bold small text-dark">{{ t_class }}</div>
+                                        <div class="fw-bold {% if avail.available_count > 0 %}text-success{% else %}text-warning{% endif %}" style="font-size: 0.85rem;">
+                                            {{ avail.status_label }}
+                                        </div>
+                                        <div class="text-muted small">₹{{ "%.2f"|format(avail.fare) }}</div>
+                                        <a href="{{ url_for('bookings.book', run_id=train_data.run_id, travel_class=t_class, origin_id=train_data.origin_stop.station_id, dest_id=train_data.dest_stop.station_id) }}" 
+                                           class="btn btn-sm {% if avail.available_count > 0 %}btn-outline-primary{% else %}btn-outline-warning{% endif %} w-100 mt-1 py-0" style="font-size: 0.75rem;">
+                                            {% if avail.available_count > 0 %}Book Seat{% else %}Waitlist{% endif %}
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card border-0 shadow-sm rounded-3 p-5 text-center">
+                <i class="fa-solid fa-train-slash fs-1 text-muted mb-3"></i>
+                <h5 class="fw-bold text-muted">No scheduled train runs found for this segment on {{ travel_date_str }}.</h5>
+                <p class="text-muted small">Please verify that origin precedes destination along the train's route, or test with sample dates like 2026-10-14, 2026-10-15, or 2026-10-20.</p>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Railway Reservation System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-1" style="color: var(--navy-primary);">Operations Dashboard</h2>
+        <p class="text-muted mb-0">Real-time relational database state, segment allocations, and revenue metrics.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('trains.search_trains') }}" class="btn btn-rail-primary">
+            <i class="fa-solid fa-magnifying-glass me-1"></i> Search Trains
+        </a>
+        <a href="{{ url_for('bookings.book') }}" class="btn btn-rail-accent">
+            <i class="fa-solid fa-plus me-1"></i> New Booking
+        </a>
+    </div>
+</div>
+
+<!-- TOP METRIC CARDS -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card d-flex align-items-center">
+            <div class="stat-icon bg-primary bg-opacity-10 text-primary me-3">
+                <i class="fa-solid fa-train"></i>
+            </div>
+            <div>
+                <div class="stat-label">Active Trains</div>
+                <div class="stat-value">{{ metrics.total_trains }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card d-flex align-items-center">
+            <div class="stat-icon bg-info bg-opacity-10 text-info me-3">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div>
+                <div class="stat-label">Passengers</div>
+                <div class="stat-value">{{ metrics.total_passengers }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card d-flex align-items-center">
+            <div class="stat-icon bg-success bg-opacity-10 text-success me-3">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <div class="stat-label">Confirmed Bookings</div>
+                <div class="stat-value text-success">{{ metrics.confirmed_bookings }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card d-flex align-items-center">
+            <div class="stat-icon bg-warning bg-opacity-10 text-warning me-3">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <div>
+                <div class="stat-label">Waitlist Queue</div>
+                <div class="stat-value text-warning">{{ metrics.waitlisted_bookings }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-4">
+        <div class="stat-card d-flex align-items-center">
+            <div class="stat-icon bg-danger bg-opacity-10 text-danger me-3">
+                <i class="fa-solid fa-ban"></i>
+            </div>
+            <div>
+                <div class="stat-label">Cancellations</div>
+                <div class="stat-value text-danger">{{ metrics.cancelled_bookings }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="stat-card d-flex align-items-center">
+            <div class="stat-icon bg-success bg-opacity-10 text-success me-3">
+                <i class="fa-solid fa-indian-rupee-sign"></i>
+            </div>
+            <div>
+                <div class="stat-label">Payments Processed</div>
+                <div class="stat-value">{{ metrics.total_payments | currency }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="stat-card d-flex align-items-center border-start border-4 border-primary">
+            <div class="stat-icon bg-primary bg-opacity-10 text-primary me-3">
+                <i class="fa-solid fa-wallet"></i>
+            </div>
+            <div>
+                <div class="stat-label">Net Retained Revenue</div>
+                <div class="stat-value">{{ metrics.net_revenue | currency }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN WORK AREA -->
+<div class="row g-4">
+    <!-- RECENT BOOKINGS -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-navy" style="color: var(--navy-primary);">
+                    <i class="fa-solid fa-clock-rotate-left text-muted me-2"></i> Recent Reservations
+                </h5>
+                <a href="{{ url_for('reports.view_reports', id='2') }}" class="btn btn-sm btn-outline-secondary">
+                    View All History
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>PNR</th>
+                            <th>Passenger</th>
+                            <th>Train & Date</th>
+                            <th>Route</th>
+                            <th>Class</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in recent_bookings %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('bookings.booking_detail', pnr=b.pnr_number) }}" class="fw-bold text-decoration-none">
+                                    {{ b.pnr_number }}
+                                </a>
+                            </td>
+                            <td>{{ b.passenger.full_name }}</td>
+                            <td>
+                                <div class="fw-semibold">{{ b.train_run.train.train_number }}</div>
+                                <small class="text-muted">{{ b.train_run.run_date.strftime('%d %b %Y') }}</small>
+                            </td>
+                            <td>
+                                <small class="badge bg-light text-dark border">
+                                    {{ b.origin_station.station_code }} → {{ b.destination_station.station_code }}
+                                </small>
+                            </td>
+                            <td><span class="badge bg-secondary">{{ b.travel_class }}</span></td>
+                            <td>
+                                {% if b.booking_status == 'CONFIRMED' %}
+                                    <span class="badge badge-confirmed status-badge">CONFIRMED</span>
+                                {% elif b.booking_status == 'WAITLISTED' %}
+                                    <span class="badge badge-waitlisted status-badge">WAITLISTED</span>
+                                {% else %}
+                                    <span class="badge badge-cancelled status-badge">CANCELLED</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('bookings.booking_detail', pnr=b.pnr_number) }}" class="btn btn-sm btn-light border py-0 px-2" title="View Ticket">
+                                    <i class="fa-solid fa-arrow-right"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                No reservations recorded yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- RELATIONAL DESIGN HIGHLIGHTS -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="fw-bold mb-0 text-navy" style="color: var(--navy-primary);">
+                    <i class="fa-solid fa-database text-primary me-2"></i> RDBMS Technical Highlights
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="fw-bold mb-1 text-primary"><i class="fa-solid fa-check-double me-1"></i> Segment-Wise Seat Allocation</h6>
+                    <p class="small text-muted mb-0">
+                        Seats allocated over half-open intervals <code>[origin, dest)</code>. Overlap condition:
+                        <code>s &lt; r_end AND r_start &lt; e</code>. Allows non-overlapping segment reuse.
+                    </p>
+                </div>
+                <hr class="my-2">
+                <div class="mb-3">
+                    <h6 class="fw-bold mb-1 text-success"><i class="fa-solid fa-layer-group me-1"></i> 3NF Relational Schema</h6>
+                    <p class="small text-muted mb-0">
+                        Decouples train catalogs from dated runs, separates passenger profiles from booking transactions, and isolates fare rules from payment logs.
+                    </p>
+                </div>
+                <hr class="my-2">
+                <div class="mb-3">
+                    <h6 class="fw-bold mb-1 text-warning"><i class="fa-solid fa-arrows-spin me-1"></i> Waitlist & Atomic Promotion</h6>
+                    <p class="small text-muted mb-0">
+                        Cancellations trigger atomic re-evaluation of waiting queue entries in strict FIFO order, assigning freed seats within a single transaction.
+                    </p>
+                </div>
+                <hr class="my-2">
+                <div>
+                    <h6 class="fw-bold mb-1 text-danger"><i class="fa-solid fa-shield-halved me-1"></i> Concurrency & Integrity</h6>
+                    <p class="small text-muted mb-0">
+                        Row-level locking (<code>FOR UPDATE</code>) ensures two simultaneous requests never acquire the same seat segment.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-3 bg-light text-center p-3">
+            <h6 class="fw-bold mb-2">Need to inspect reports?</h6>
+            <p class="small text-muted mb-3">Run all 12 benchmark SQL queries including coach occupancy and financial reconciliation.</p>
+            <a href="{{ url_for('reports.view_reports') }}" class="btn btn-rail-primary btn-sm">
+                <i class="fa-solid fa-chart-line me-1"></i> Open SQL Reports Hub
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

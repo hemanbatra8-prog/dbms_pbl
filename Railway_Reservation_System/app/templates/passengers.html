@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Passenger Management | Railway Reservation System{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- REGISTER PASSENGER FORM -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="fw-bold mb-0 text-navy" style="color: var(--navy-primary);">
+                    <i class="fa-solid fa-user-plus text-primary me-2"></i> Register Passenger
+                </h5>
+            </div>
+            <div class="card-body p-3">
+                <form method="POST" action="{{ url_for('passengers.manage_passengers') }}">
+                    <div class="mb-3">
+                        <label for="full_name" class="form-label fw-semibold small">Full Name</label>
+                        <input type="text" name="full_name" id="full_name" class="form-control" placeholder="e.g. Rahul Sharma" required>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label for="gender" class="form-label fw-semibold small">Gender</label>
+                            <select name="gender" id="gender" class="form-select" required>
+                                <option value="MALE">Male</option>
+                                <option value="FEMALE">Female</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label for="age" class="form-label fw-semibold small">Age (1-119)</label>
+                            <input type="number" name="age" id="age" class="form-control" min="1" max="119" value="28" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label fw-semibold small">Email Address</label>
+                        <input type="email" name="email" id="email" class="form-control" placeholder="rahul@example.com" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="phone" class="form-label fw-semibold small">Phone Number</label>
+                        <input type="tel" name="phone" id="phone" class="form-control" placeholder="9876543210" required>
+                    </div>
+
+                    <div class="row g-2 mb-4">
+                        <div class="col-5">
+                            <label for="id_card_type" class="form-label fw-semibold small">ID Type</label>
+                            <select name="id_card_type" id="id_card_type" class="form-select" required>
+                                <option value="AADHAAR">Aadhaar</option>
+                                <option value="PASSPORT">Passport</option>
+                                <option value="PAN">PAN Card</option>
+                                <option value="VOTER_ID">Voter ID</option>
+                            </select>
+                        </div>
+                        <div class="col-7">
+                            <label for="id_card_number" class="form-label fw-semibold small">ID Number</label>
+                            <input type="text" name="id_card_number" id="id_card_number" class="form-control" placeholder="ID Number" required>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-rail-primary">
+                            <i class="fa-solid fa-save me-1"></i> Register Passenger
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- PASSENGER DIRECTORY TABLE -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-navy" style="color: var(--navy-primary);">
+                    <i class="fa-solid fa-users text-primary me-2"></i> Registered Passenger Profiles ({{ passengers|length }})
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Age/Gender</th>
+                            <th>Contact</th>
+                            <th>ID Document</th>
+                            <th>Bookings</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in passengers %}
+                        <tr>
+                            <td class="text-muted small">P-{{ p.passenger_id }}</td>
+                            <td class="fw-bold">{{ p.full_name }}</td>
+                            <td>{{ p.age }} yrs / {{ p.gender }}</td>
+                            <td>
+                                <small class="d-block">{{ p.email }}</small>
+                                <small class="text-muted">{{ p.phone }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    {{ p.id_card_type }}: {{ p.id_card_number }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary rounded-pill">{{ p.bookings|length }}</span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">No passengers registered yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
