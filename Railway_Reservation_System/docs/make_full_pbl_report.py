@@ -1,14 +1,21 @@
 """
-Complete Python builder that transforms DBMS_PBL_Report_Template_Final_with_Guidelines.docx
-into the official Woxsen University DBMS PBL Report for the Railway Reservation System.
+Space-Optimized Builder for Official Woxsen University DBMS PBL Report.
+Eliminates all unnecessary blank spaces, rogue page breaks, and empty paragraphs.
+Generates:
+- Railway_Reservation_System/docs/Railway_Ticket_Reservation_DBMS_PBL_Report.docx
+- docs/Railway_Ticket_Reservation_DBMS_PBL_Report.docx
+- Railway_Ticket_Reservation_DBMS_PBL_Report.docx
+- PDF versions via LibreOffice headless export
 """
 import os
 import sys
 import shutil
+import subprocess
 from pathlib import Path
 import docx
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls
 
@@ -19,7 +26,9 @@ ROOT_DOCS_DIR = ROOT_DIR / 'docs'
 SCREENSHOTS_DIR = DOCS_DIR / 'screenshots'
 TEMPLATE_PATH = DOCS_DIR / 'DBMS_PBL_Report_Template_Final_with_Guidelines.docx'
 TARGET_DOCX = DOCS_DIR / 'Railway_Ticket_Reservation_DBMS_PBL_Report.docx'
+TARGET_PDF = DOCS_DIR / 'Railway_Ticket_Reservation_DBMS_PBL_Report.pdf'
 
+sys.path.insert(0, str(DOCS_DIR))
 from pbl_report_data import (
     PROJECT_TITLE, STUDENT_DETAILS, TOC_DATA, TABLES_LIST, FIGURES_LIST,
     ACRONYMS_DATA, ABSTRACT_TEXT, KEYWORDS_TEXT,
@@ -36,7 +45,6 @@ from pbl_report_data import (
 FONT_NAME = 'Times New Roman'
 FONT_CODE = 'Courier New'
 COLOR_TEXT = RGBColor(0, 0, 0)
-COLOR_MUTED = RGBColor(70, 70, 70)
 COLOR_SUCCESS = RGBColor(16, 130, 70)
 HEX_HEADER_BG = "EAEFF5"
 HEX_ROW_ALT = "F8FAFC"
@@ -47,7 +55,7 @@ def set_cell_background(cell, hex_color):
     shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{hex_color}"/>')
     tcPr.append(shd)
 
-def set_cell_margins(cell, top=70, bottom=70, left=100, right=100):
+def set_cell_margins(cell, top=20, bottom=20, left=45, right=45):
     tcPr = cell._tc.get_or_add_tcPr()
     tcMar = parse_xml(
         f'<w:tcMar {nsdecls("w")}>'
@@ -59,14 +67,14 @@ def set_cell_margins(cell, top=70, bottom=70, left=100, right=100):
     )
     tcPr.append(tcMar)
 
-def format_cell(cell, text, font_name=FONT_NAME, size_pt=10, bold=False, italic=False, color_rgb=COLOR_TEXT, align=WD_ALIGN_PARAGRAPH.LEFT, bg_color=None):
+def format_cell(cell, text, font_name=FONT_NAME, size_pt=8.5, bold=False, italic=False, color_rgb=COLOR_TEXT, align=WD_ALIGN_PARAGRAPH.LEFT, bg_color=None, margins=(20, 20, 45, 45)):
     if bg_color:
         set_cell_background(cell, bg_color)
-    set_cell_margins(cell)
+    set_cell_margins(cell, *margins)
     p = cell.paragraphs[0]
     p.text = ''
     p.alignment = align
-    p.paragraph_format.line_spacing = 1.15
+    p.paragraph_format.line_spacing = 1.02
     p.paragraph_format.space_after = Pt(0)
     p.paragraph_format.space_before = Pt(0)
     run = p.add_run(text)
@@ -78,33 +86,47 @@ def format_cell(cell, text, font_name=FONT_NAME, size_pt=10, bold=False, italic=
         run.font.color.rgb = color_rgb
     return p
 
-def populate_table_data(table, headers, rows_data, col_widths=None):
+def populate_table_data(table, headers, rows_data, col_widths=None, base_size_pt=8.5, code_size_pt=8.0, margins=(20, 20, 45, 45)):
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
     while len(table.rows) > 1:
         tr = table.rows[-1]._tr
         tr.getparent().remove(tr)
+        
     hdr_cells = table.rows[0].cells
     while len(hdr_cells) < len(headers):
         table.rows[0]._tr.append(parse_xml(f'<w:tc {nsdecls("w")}><w:p/></w:tc>'))
         hdr_cells = table.rows[0].cells
+        
+    trPr = table.rows[0]._tr.get_or_add_trPr()
+    trPr.append(parse_xml(f'<w:tblHeader {nsdecls("w")}/>'))
+    trPr.append(parse_xml(f'<w:cantSplit {nsdecls("w")}/>'))
+    
     for c_idx, h_text in enumerate(headers):
-        format_cell(hdr_cells[c_idx], h_text, font_name=FONT_NAME, size_pt=10, bold=True, bg_color=HEX_HEADER_BG)
+        format_cell(hdr_cells[c_idx], h_text, font_name=FONT_NAME, size_pt=base_size_pt, bold=True, bg_color=HEX_HEADER_BG, margins=margins)
+        
     for r_idx, row_vals in enumerate(rows_data):
         row = table.add_row()
+        r_trPr = row._tr.get_or_add_trPr()
+        for elem in list(r_trPr):
+            if 'cantSplit' in elem.tag:
+                r_trPr.remove(elem)
+                
         bg_col = HEX_ROW_ALT if r_idx % 2 == 1 else HEX_WHITE
         for c_idx, val in enumerate(row_vals):
             is_status = val in ['PASSED', 'ACTIVE', 'CONFIRMED', '3NF', 'COMPLETED', 'Yes']
             color = COLOR_SUCCESS if is_status else COLOR_TEXT
             bold = is_status or (c_idx == 0 and len(row_vals) > 3)
             font_use = FONT_CODE if ('()' in str(val) or 'SELECT' in str(val) or 'CREATE' in str(val) or 'test_' in str(val) or 'TC-' in str(val) or 'FR-' in str(val)) else FONT_NAME
-            size_use = 9.5 if font_use == FONT_CODE else 10
-            format_cell(row.cells[c_idx], str(val), font_name=font_use, size_pt=size_use, bold=bold, color_rgb=color, bg_color=bg_col)
+            size_use = code_size_pt if font_use == FONT_CODE else base_size_pt
+            format_cell(row.cells[c_idx], str(val), font_name=font_use, size_pt=size_use, bold=bold, color_rgb=color, bg_color=bg_col, margins=margins)
+            
     if col_widths:
         for row in table.rows:
             for c_idx, w in enumerate(col_widths):
                 if c_idx < len(row.cells):
                     row.cells[c_idx].width = Inches(w)
 
-def add_paragraph_after(target_p, text, font_name=FONT_NAME, size_pt=12, bold=False, italic=False, align=WD_ALIGN_PARAGRAPH.JUSTIFY, space_after=6, space_before=0, line_spacing=1.5):
+def add_paragraph_after(target_p, text, font_name=FONT_NAME, size_pt=11.0, bold=False, italic=False, align=WD_ALIGN_PARAGRAPH.JUSTIFY, space_after=2, space_before=0, line_spacing=1.15):
     new_p = parse_xml(f'<w:p {nsdecls("w")}/>')
     target_p._p.addnext(new_p)
     p = docx.text.paragraph.Paragraph(new_p, target_p._parent)
@@ -119,23 +141,27 @@ def add_paragraph_after(target_p, text, font_name=FONT_NAME, size_pt=12, bold=Fa
     run.font.italic = italic
     return p
 
-def add_code_after(target_p, code_text):
-    return add_paragraph_after(target_p, code_text, font_name=FONT_CODE, size_pt=9.5, bold=False, align=WD_ALIGN_PARAGRAPH.LEFT, space_after=4, space_before=2, line_spacing=1.05)
-
 def remove_element(elem):
     parent = elem.getparent()
     if parent is not None:
         parent.remove(elem)
 
-def generate_report():
+def clean_run_page_breaks(p):
+    """Removes rogue <w:br w:type='page'/> inside paragraph runs."""
+    for r in p.runs:
+        for elem in list(r._r):
+            if elem.tag.endswith('br') and elem.attrib.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}type') == 'page':
+                r._r.remove(elem)
+            elif elem.tag.endswith('br') and elem.get(f'{{{nsdecls("w")}}}type') == 'page':
+                r._r.remove(elem)
+
+def generate_report(toc_data_override=None, tables_list_override=None, figures_list_override=None):
     print(f"Loading template: {TEMPLATE_PATH}")
     doc = docx.Document(str(TEMPLATE_PATH))
     
     # -------------------------------------------------------------------------
     # 1. CLEAN UP GUIDELINES AT THE START
     # -------------------------------------------------------------------------
-    # Elements before Table 0: P0 to P20 are guidelines, P21 to P47 are blank spacing
-    # We want Table 0 (SCHOOL OF TECHNOLOGY + Woxsen logo) to be element 0 on Page 1.
     elems_to_remove = []
     for elem in doc._body._element:
         if elem.tag.endswith('tbl'):
@@ -143,36 +169,31 @@ def generate_report():
         elems_to_remove.append(elem)
     for elem in elems_to_remove:
         remove_element(elem)
-    print(f"Removed {len(elems_to_remove)} guideline elements before cover page header.")
 
     # -------------------------------------------------------------------------
     # 2. TITLE PAGE TABLES & DETAILS
     # -------------------------------------------------------------------------
-    # Table 0: Header (SCHOOL OF TECHNOLOGY | Woxsen Logo) - Keep intact!
-    
-    # Table 1: Title Box
     t1 = doc.tables[1]
-    format_cell(t1.rows[0].cells[0], PROJECT_TITLE, font_name=FONT_NAME, size_pt=14, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
+    format_cell(t1.rows[0].cells[0], PROJECT_TITLE, font_name=FONT_NAME, size_pt=12.5, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
     
-    # Table 2: Metadata (Program, Section, Faculty, Date, Academic Year)
     t2 = doc.tables[2]
-    format_cell(t2.rows[0].cells[1], STUDENT_DETAILS["program"], font_name=FONT_NAME, size_pt=10.5, bold=False)
-    format_cell(t2.rows[1].cells[1], STUDENT_DETAILS["section"], font_name=FONT_NAME, size_pt=10.5, bold=False)
-    format_cell(t2.rows[2].cells[1], STUDENT_DETAILS["faculty"], font_name=FONT_NAME, size_pt=10.5, bold=False)
-    format_cell(t2.rows[3].cells[1], STUDENT_DETAILS["date"], font_name=FONT_NAME, size_pt=10.5, bold=False)
-    format_cell(t2.rows[4].cells[1], STUDENT_DETAILS["year"], font_name=FONT_NAME, size_pt=10.5, bold=False)
+    format_cell(t2.rows[0].cells[1], STUDENT_DETAILS["program"], font_name=FONT_NAME, size_pt=9.0, bold=False)
+    format_cell(t2.rows[1].cells[1], STUDENT_DETAILS["section"], font_name=FONT_NAME, size_pt=9.0, bold=False)
+    format_cell(t2.rows[2].cells[1], STUDENT_DETAILS["faculty"], font_name=FONT_NAME, size_pt=9.0, bold=False)
+    format_cell(t2.rows[3].cells[1], STUDENT_DETAILS["date"], font_name=FONT_NAME, size_pt=9.0, bold=False)
+    format_cell(t2.rows[4].cells[1], STUDENT_DETAILS["year"], font_name=FONT_NAME, size_pt=9.0, bold=False)
     
-    # Table 3: Student Details
     t3 = doc.tables[3]
-    format_cell(t3.rows[1].cells[0], STUDENT_DETAILS["roll_no"], font_name=FONT_NAME, size_pt=10.5, bold=True)
-    format_cell(t3.rows[1].cells[1], STUDENT_DETAILS["name"], font_name=FONT_NAME, size_pt=10.5, bold=True)
-    format_cell(t3.rows[1].cells[2], STUDENT_DETAILS["mobile"], font_name=FONT_NAME, size_pt=10.5, bold=False)
-    format_cell(t3.rows[1].cells[3], STUDENT_DETAILS["email"], font_name=FONT_NAME, size_pt=10.5, bold=False)
-    
+    format_cell(t3.rows[1].cells[0], STUDENT_DETAILS["roll_no"], font_name=FONT_NAME, size_pt=9.0, bold=True)
+    format_cell(t3.rows[1].cells[1], STUDENT_DETAILS["name"], font_name=FONT_NAME, size_pt=9.0, bold=True)
+    format_cell(t3.rows[1].cells[2], STUDENT_DETAILS["mobile"], font_name=FONT_NAME, size_pt=9.0, bold=False)
+    format_cell(t3.rows[1].cells[3], STUDENT_DETAILS["email"], font_name=FONT_NAME, size_pt=9.0, bold=False)
+
     # -------------------------------------------------------------------------
     # 3. ACKNOWLEDGEMENT & UNDERTAKING
     # -------------------------------------------------------------------------
     for p in doc.paragraphs:
+        clean_run_page_breaks(p)
         if "Name of the Faculty" in p.text:
             p.text = (
                 f"I thank my course faculty, {STUDENT_DETAILS['faculty']}, for the continuous guidance, constructive suggestions, "
@@ -182,67 +203,73 @@ def generate_report():
                 f"Submitted by: {STUDENT_DETAILS['name']} (Roll No: {STUDENT_DETAILS['roll_no']}, Section: {STUDENT_DETAILS['section']})."
             )
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-            p.paragraph_format.line_spacing = 1.5
+            p.paragraph_format.line_spacing = 1.2
+            p.paragraph_format.space_after = Pt(2)
             p.runs[0].font.name = FONT_NAME
-            p.runs[0].font.size = Pt(12)
+            p.runs[0].font.size = Pt(11.0)
         elif "[Project Title]" in p.text:
             p.text = p.text.replace("[Project Title]", "Railway Ticket Reservation and Journey Management System Using Relational Database Management Systems")
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-            p.paragraph_format.line_spacing = 1.5
+            p.paragraph_format.line_spacing = 1.2
+            p.paragraph_format.space_after = Pt(2)
             p.runs[0].font.name = FONT_NAME
-            p.runs[0].font.size = Pt(12)
+            p.runs[0].font.size = Pt(11.0)
 
     # Table 4: Undertaking Signature Table
     t4 = doc.tables[4]
-    format_cell(t4.rows[0].cells[4], "Heman\n(Digital Signature)", font_name=FONT_NAME, size_pt=10, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
-    format_cell(t4.rows[1].cells[2], STUDENT_DETAILS["date"], font_name=FONT_NAME, size_pt=10)
-    format_cell(t4.rows[1].cells[4], STUDENT_DETAILS["name"], font_name=FONT_NAME, size_pt=10, bold=True)
-    format_cell(t4.rows[2].cells[2], STUDENT_DETAILS["place"], font_name=FONT_NAME, size_pt=10)
-    format_cell(t4.rows[2].cells[4], STUDENT_DETAILS["roll_no"], font_name=FONT_NAME, size_pt=10, bold=True)
-    format_cell(t4.rows[3].cells[4], "B.Tech CSE (AIML)", font_name=FONT_NAME, size_pt=10)
+    format_cell(t4.rows[0].cells[4], "Heman\n(Digital Signature)", font_name=FONT_NAME, size_pt=8.5, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
+    format_cell(t4.rows[1].cells[2], STUDENT_DETAILS["date"], font_name=FONT_NAME, size_pt=8.5)
+    format_cell(t4.rows[1].cells[4], STUDENT_DETAILS["name"], font_name=FONT_NAME, size_pt=8.5, bold=True)
+    format_cell(t4.rows[2].cells[2], STUDENT_DETAILS["place"], font_name=FONT_NAME, size_pt=8.5)
+    format_cell(t4.rows[2].cells[4], STUDENT_DETAILS["roll_no"], font_name=FONT_NAME, size_pt=8.5, bold=True)
+    format_cell(t4.rows[3].cells[4], "B.Tech CSE (AIML)", font_name=FONT_NAME, size_pt=8.5)
 
     # -------------------------------------------------------------------------
     # 4. PRELIMINARY LISTS (TOC, TABLES, FIGURES, ACRONYMS)
     # -------------------------------------------------------------------------
-    # Table 5: Table of Contents
     t5 = doc.tables[5]
-    populate_table_data(t5, ["Contents", "Page No."], TOC_DATA, col_widths=[5.5, 1.0])
+    populate_table_data(t5, ["Contents", "Page No."], toc_data_override or TOC_DATA, col_widths=[5.5, 1.0], base_size_pt=8.5)
     
-    # Table 6: List of Tables
     t6 = doc.tables[6]
-    populate_table_data(t6, ["Table No.", "Table Title", "Page No."], TABLES_LIST, col_widths=[1.4, 4.3, 0.8])
+    populate_table_data(t6, ["Table No.", "Table Title", "Page No."], tables_list_override or TABLES_LIST, col_widths=[1.4, 4.3, 0.8], base_size_pt=8.5)
     
-    # Table 7: List of Figures
     t7 = doc.tables[7]
-    populate_table_data(t7, ["Figure No.", "Figure Title", "Page No."], FIGURES_LIST, col_widths=[1.4, 4.3, 0.8])
+    populate_table_data(t7, ["Figure No.", "Figure Title", "Page No."], figures_list_override or FIGURES_LIST, col_widths=[1.4, 4.3, 0.8], base_size_pt=8.5)
     
-    # Table 8: List of Acronyms
     t8 = doc.tables[8]
-    populate_table_data(t8, ["Acronym", "Expansion"], ACRONYMS_DATA, col_widths=[1.5, 5.0])
+    populate_table_data(t8, ["Acronym", "Expansion"], ACRONYMS_DATA, col_widths=[1.5, 5.0], base_size_pt=8.5)
     
     # Remove Table 9 (Instructional guide table for abstract)
     t9 = doc.tables[9]
     remove_element(t9._tbl)
-    print("Removed instructional Abstract guide table (Table 9).")
+
+    # Unify LIST OF TABLES and LIST OF FIGURES on Page 5
+    for p in doc.paragraphs:
+        clean_run_page_breaks(p)
+        if "LIST OF FIGURES" in p.text:
+            p.paragraph_format.page_break_before = False
+            p.paragraph_format.space_before = Pt(8)
+            p.paragraph_format.space_after = Pt(2)
 
     # -------------------------------------------------------------------------
     # 5. ABSTRACT & KEYWORDS
     # -------------------------------------------------------------------------
     for p in doc.paragraphs:
+        clean_run_page_breaks(p)
         if "[Write the final abstract here.]" in p.text:
             p.text = ABSTRACT_TEXT
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-            p.paragraph_format.line_spacing = 1.5
-            p.paragraph_format.space_after = Pt(12)
+            p.paragraph_format.line_spacing = 1.2
+            p.paragraph_format.space_after = Pt(3)
             p.runs[0].font.name = FONT_NAME
-            p.runs[0].font.size = Pt(12)
+            p.runs[0].font.size = Pt(11.0)
         elif "Keywords: [Relational Database" in p.text or "Keywords:" in p.text:
             p.text = f"Keywords: {KEYWORDS_TEXT}"
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-            p.paragraph_format.line_spacing = 1.5
-            p.paragraph_format.space_after = Pt(12)
+            p.paragraph_format.line_spacing = 1.2
+            p.paragraph_format.space_after = Pt(4)
             p.runs[0].font.name = FONT_NAME
-            p.runs[0].font.size = Pt(12)
+            p.runs[0].font.size = Pt(11.0)
             p.runs[0].font.italic = True
 
     # -------------------------------------------------------------------------
@@ -264,14 +291,15 @@ def generate_report():
         "relational database system powered by MySQL 8.x InnoDB and Python Flask to solve these core operational challenges."
     )
     for p in doc.paragraphs:
+        clean_run_page_breaks(p)
         if "[Problem statement - approximately 1 to 2 paragraphs.]" in p.text:
             p.text = p_prob_text
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-            p.paragraph_format.line_spacing = 1.5
+            p.paragraph_format.line_spacing = 1.2
+            p.paragraph_format.space_after = Pt(2)
             p.runs[0].font.name = FONT_NAME
-            p.runs[0].font.size = Pt(12)
+            p.runs[0].font.size = Pt(11.0)
 
-    # Objectives
     obj_texts = [
         "1. Design a normalized relational schema up to Third Normal Form (3NF) comprising 14 decoupled relations, eliminating partial and transitive functional dependencies to guarantee zero insertion, update, and deletion anomalies.",
         "2. Formulate and implement a mathematical half-open interval allocation algorithm [start_stop_seq, end_stop_seq) to evaluate segment conflicts dynamically and maximize seat utilization across multi-hop rail corridors.",
@@ -279,49 +307,50 @@ def generate_report():
         "4. Develop an automated FIFO waitlist management and queue promotion mechanism that immediately promotes waiting passengers and reallocates vacated berths upon ticket cancellation.",
         "5. Construct a full-stack Python/Flask web application connected to MySQL InnoDB with parameterized query protection, intuitive Electronic Reservation Slip (ERS) generation, and 12 analytical SQL reporting benchmarks."
     ]
-    # Replace [Objective 1] .. [Objective 4]
     obj_idx = 0
     for p in doc.paragraphs:
+        clean_run_page_breaks(p)
         if "[Objective" in p.text:
             if obj_idx < len(obj_texts):
                 p.text = obj_texts[obj_idx]
                 p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-                p.paragraph_format.line_spacing = 1.5
+                p.paragraph_format.line_spacing = 1.15
+                p.paragraph_format.space_after = Pt(2)
                 p.runs[0].font.name = FONT_NAME
-                p.runs[0].font.size = Pt(12)
+                p.runs[0].font.size = Pt(10.5)
                 obj_idx += 1
 
-    # Table 1: Scope & Assumptions (Table 10 in template, now index 9 after deleting Table 9)
-    # Let's locate tables by header or sequential order
-    populate_table_data(doc.tables[9], TABLE_1_HEADERS, TABLE_1_ROWS, col_widths=[1.8, 4.7])
+    # Table 1: Scope & Assumptions (Table 9)
+    populate_table_data(doc.tables[9], TABLE_1_HEADERS, TABLE_1_ROWS, col_widths=[1.8, 4.7], base_size_pt=8.5)
     # Table 2: Proposed Solution Strategy (Table 10)
-    populate_table_data(doc.tables[10], TABLE_2_HEADERS, TABLE_2_ROWS, col_widths=[1.8, 4.7])
+    populate_table_data(doc.tables[10], TABLE_2_HEADERS, TABLE_2_ROWS, col_widths=[1.8, 4.7], base_size_pt=8.5)
     # Table 3: Functional Requirements (Table 11)
-    populate_table_data(doc.tables[11], TABLE_3_HEADERS, TABLE_3_ROWS, col_widths=[1.0, 4.3, 1.2])
+    populate_table_data(doc.tables[11], TABLE_3_HEADERS, TABLE_3_ROWS, col_widths=[1.0, 4.3, 1.2], base_size_pt=8.5)
 
     # 1.6 ER Diagram: Replace [Insert approved ER diagram here]
     er_path = SCREENSHOTS_DIR / 'er_diagram.png'
     for p in doc.paragraphs:
+        clean_run_page_breaks(p)
         if "[Insert approved ER diagram here]" in p.text:
             p.text = ""
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.paragraph_format.space_before = Pt(2)
+            p.paragraph_format.space_after = Pt(1)
+            p.paragraph_format.keep_with_next = True
             if er_path.exists():
                 r = p.add_run()
-                r.add_picture(str(er_path), width=Inches(6.2))
-                print("Inserted high-resolution ER Diagram into Section 1.6.")
+                r.add_picture(str(er_path), width=Inches(4.6))
     
     # Table 4: Entity & Relationship Summary (Table 12)
-    populate_table_data(doc.tables[12], TABLE_4_HEADERS, TABLE_4_ROWS, col_widths=[1.8, 2.7, 2.0])
+    populate_table_data(doc.tables[12], TABLE_4_HEADERS, TABLE_4_ROWS, col_widths=[1.7, 2.8, 2.0], base_size_pt=8.0, code_size_pt=7.5, margins=(15, 15, 35, 35))
 
     # -------------------------------------------------------------------------
     # 7. CHAPTER 2: LOGICAL DATABASE DESIGN & NORMALIZATION
     # -------------------------------------------------------------------------
-    # Table 5: Relational Schema (Table 13)
-    populate_table_data(doc.tables[13], TABLE_5_HEADERS, TABLE_5_ROWS, col_widths=[0.6, 1.8, 4.1])
-    # Table 6: Keys & Integrity Constraints (Table 14)
-    populate_table_data(doc.tables[14], TABLE_6_HEADERS, TABLE_6_ROWS, col_widths=[1.5, 1.4, 1.6, 2.0])
+    populate_table_data(doc.tables[13], TABLE_5_HEADERS, TABLE_5_ROWS, col_widths=[0.6, 1.8, 4.1], base_size_pt=8.5)
+    populate_table_data(doc.tables[14], TABLE_6_HEADERS, TABLE_6_ROWS, col_widths=[1.5, 1.4, 1.6, 2.0], base_size_pt=8.0, code_size_pt=7.5)
 
-    # Section 2.3: Functional Dependencies Narrative
+    # Section 2.3: Functional Dependencies
     fd_text = (
         "The relational design is governed by a rigorous set of minimal functional dependencies across all 14 relations, "
         "ensuring that every non-key attribute is fully functionally dependent on candidate keys:\n\n"
@@ -342,15 +371,17 @@ def generate_report():
         "14. cancellations: cancellation_id -> {booking_id, cancellation_reason, cancellation_fee, refund_amount, refund_status, cancelled_at}"
     )
     for p in doc.paragraphs:
+        clean_run_page_breaks(p)
         if "[Example format: Key -> non-key attributes" in p.text:
             p.text = fd_text
-            p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-            p.paragraph_format.line_spacing = 1.3
+            p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            p.paragraph_format.line_spacing = 1.05
+            p.paragraph_format.space_after = Pt(2)
             p.runs[0].font.name = FONT_CODE
-            p.runs[0].font.size = Pt(9.5)
+            p.runs[0].font.size = Pt(7.5)
 
     # Table 7: Normalization Status up to 3NF (Table 15)
-    populate_table_data(doc.tables[15], TABLE_7_HEADERS, TABLE_7_ROWS, col_widths=[1.5, 0.6, 0.6, 0.6, 0.6, 2.6])
+    populate_table_data(doc.tables[15], TABLE_7_HEADERS, TABLE_7_ROWS, col_widths=[1.5, 0.6, 0.6, 0.6, 0.6, 2.6], base_size_pt=8.5)
 
     # Section 2.4: Normalization Narrative & BCNF Trade-off
     norm_narrative = (
@@ -370,16 +401,24 @@ def generate_report():
         "(F = F1 U F2) without requiring costly multi-table locking triggers during high-speed transaction inserts."
     )
     for p in doc.paragraphs:
+        clean_run_page_breaks(p)
         if "2.4 Normalization" in p.text:
-            add_paragraph_after(p, norm_narrative)
+            add_paragraph_after(p, norm_narrative, size_pt=9.5, space_after=2, line_spacing=1.12)
 
     # Table 8: Data Dictionary (Table 16)
-    populate_table_data(doc.tables[16], TABLE_8_HEADERS, TABLE_8_ROWS, col_widths=[1.2, 1.4, 1.1, 1.4, 1.4])
+    populate_table_data(doc.tables[16], TABLE_8_HEADERS, TABLE_8_ROWS, col_widths=[1.2, 1.4, 1.1, 1.4, 1.4], base_size_pt=8.0, code_size_pt=7.5, margins=(15, 15, 35, 35))
+
+    for p in doc.paragraphs:
+        clean_run_page_breaks(p)
+        if "2.6 Implementation of Logical Design" in p.text:
+            p.paragraph_format.page_break_before = True
+            p.paragraph_format.space_before = Pt(4)
+            p.paragraph_format.space_after = Pt(2)
 
     # Table 9: Database Implementation Environment (Table 17)
-    populate_table_data(doc.tables[17], TABLE_9_HEADERS, TABLE_9_ROWS, col_widths=[2.5, 4.0])
+    populate_table_data(doc.tables[17], TABLE_9_HEADERS, TABLE_9_ROWS, col_widths=[2.5, 4.0], base_size_pt=8.0, margins=(15, 15, 35, 35))
 
-    # Section 2.6: DDL & Sample Data Excerpts
+    # Section 2.6: DDL & Sample Data Excerpts (Tightly styled)
     ddl_sample_text = (
         "-- Representative DDL Excerpt: Multi-Hop Journey Segments & Concurrency Locks\n"
         "CREATE TABLE journey_segments (\n"
@@ -404,12 +443,14 @@ def generate_report():
         "       (4, 'BSB', 'Varanasi Junction', 'Varanasi', 'Uttar Pradesh');"
     )
     for p in doc.paragraphs:
+        clean_run_page_breaks(p)
         if "[Insert representative DDL snippets" in p.text:
             p.text = ddl_sample_text
             p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-            p.paragraph_format.line_spacing = 1.05
+            p.paragraph_format.line_spacing = 1.0
+            p.paragraph_format.space_after = Pt(2)
             p.runs[0].font.name = FONT_CODE
-            p.runs[0].font.size = Pt(9.0)
+            p.runs[0].font.size = Pt(7.5)
 
     # -------------------------------------------------------------------------
     # 8. CHAPTER 3: APPLICATION DEVELOPMENT & TESTING
@@ -423,56 +464,71 @@ def generate_report():
         "locking (SELECT ... FOR UPDATE) to guarantee absolute ACID consistency during peak concurrent booking spikes."
     )
     for p in doc.paragraphs:
+        clean_run_page_breaks(p)
         if "[Application overview - approximately 1 paragraph.]" in p.text:
             p.text = p_app_overview
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-            p.paragraph_format.line_spacing = 1.5
+            p.paragraph_format.line_spacing = 1.15
+            p.paragraph_format.space_after = Pt(2)
             p.runs[0].font.name = FONT_NAME
-            p.runs[0].font.size = Pt(12)
+            p.runs[0].font.size = Pt(10.5)
 
-    # Table 10: Application Development Environment (Table 18)
-    populate_table_data(doc.tables[18], TABLE_10_HEADERS, TABLE_10_ROWS, col_widths=[2.5, 4.0])
-    # Table 11: Application Module-to-Database Mapping (Table 19)
-    populate_table_data(doc.tables[19], TABLE_11_HEADERS, TABLE_11_ROWS, col_widths=[1.5, 1.8, 1.8, 1.4])
-    # Table 12: CRUD Operations (Table 20)
-    populate_table_data(doc.tables[20], TABLE_12_HEADERS, TABLE_12_ROWS, col_widths=[1.2, 1.6, 1.5, 2.2])
-    # Table 13: Business Rules, Validation and Error Handling (Table 21)
-    populate_table_data(doc.tables[21], TABLE_13_HEADERS, TABLE_13_ROWS, col_widths=[1.6, 2.3, 2.6])
-    # Table 14: Reports and Database Operations (Table 22)
-    populate_table_data(doc.tables[22], TABLE_14_HEADERS, TABLE_14_ROWS, col_widths=[1.8, 2.2, 2.5])
+    populate_table_data(doc.tables[18], TABLE_10_HEADERS, TABLE_10_ROWS, col_widths=[2.5, 4.0], base_size_pt=8.0, margins=(12, 12, 30, 30))
+    populate_table_data(doc.tables[19], TABLE_11_HEADERS, TABLE_11_ROWS, col_widths=[1.5, 1.8, 1.8, 1.4], base_size_pt=7.5, code_size_pt=7.0, margins=(10, 10, 25, 25))
+    populate_table_data(doc.tables[20], TABLE_12_HEADERS, TABLE_12_ROWS, col_widths=[1.2, 1.6, 1.5, 2.2], base_size_pt=7.5, code_size_pt=7.0, margins=(10, 10, 25, 25))
+    populate_table_data(doc.tables[21], TABLE_13_HEADERS, TABLE_13_ROWS, col_widths=[1.6, 2.3, 2.6], base_size_pt=7.5, code_size_pt=7.0, margins=(10, 10, 25, 25))
+    populate_table_data(doc.tables[22], TABLE_14_HEADERS, TABLE_14_ROWS, col_widths=[1.8, 2.2, 2.5], base_size_pt=7.5, code_size_pt=7.0, margins=(10, 10, 25, 25))
 
-    # Section 3.7: Application Screenshots Replacement
+    # Section 3.7: Optimized Screenshot Placement
+    # Screen width = 3.7 in (height = 2.24 in)
+    # Page A: Heading + Figure 2, Figure 3, Figure 4
+    # Page B: Figure 5, Figure 6, Figure 7
+    # Page C: Section 3.8 + Table 15 + Key Verification Results narrative
     screens = [
-        ("Figure 2", "dashboard.png", "Figure 2. Executive Analytics and Key Performance Indicator (KPI) Dashboard"),
-        ("Figure 3", "search_results.png", "Figure 3. Multi-Hop Train Search and Segment Seat Inventory Results"),
-        ("Figure 4", "booking_ers.png", "Figure 4. Confirmed Electronic Reservation Slip (ERS Ticket Confirmation)"),
-        ("Figure 5", "waitlist_queue.png", "Figure 5. Live Waitlist Queue and Real-Time Position Tracking"),
+        ("dashboard.png", "Figure 2. Executive Analytics and Key Performance Indicator (KPI) Dashboard"),
+        ("search_results.png", "Figure 3. Multi-Hop Train Search and Segment Seat Inventory Results"),
+        ("booking_ers.png", "Figure 4. Confirmed Electronic Reservation Slip (ERS Ticket Confirmation)"),
+        ("waitlist_queue.png", "Figure 5. Live Waitlist Queue and Real-Time Position Tracking"),
     ]
     
     img_placeholders = [p for p in doc.paragraphs if "[Insert application screenshot here]" in p.text]
-    for idx, (fig_id, img_file, caption) in enumerate(screens):
+    for idx, (img_file, caption) in enumerate(screens):
         if idx < len(img_placeholders):
             target_p = img_placeholders[idx]
             target_p.text = ""
             target_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            target_p.paragraph_format.space_before = Pt(2)
+            target_p.paragraph_format.space_after = Pt(1)
+            target_p.paragraph_format.keep_with_next = True
             img_full = SCREENSHOTS_DIR / img_file
             if img_full.exists():
                 r = target_p.add_run()
-                r.add_picture(str(img_full), width=Inches(5.8))
-                print(f"Inserted screenshot {img_file} for {fig_id}.")
+                r.add_picture(str(img_full), width=Inches(3.7))
 
-    # Update Figure 2 to 5 captions
     for p in doc.paragraphs:
+        clean_run_page_breaks(p)
         if "Figure 2." in p.text:
             p.text = "Figure 2. Executive Analytics and Key Performance Indicator (KPI) Dashboard"
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.paragraph_format.space_before = Pt(1)
+            p.paragraph_format.space_after = Pt(2)
         elif "Figure 3." in p.text:
             p.text = "Figure 3. Multi-Hop Train Search and Segment Seat Inventory Results"
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.paragraph_format.space_before = Pt(1)
+            p.paragraph_format.space_after = Pt(2)
         elif "Figure 4." in p.text:
             p.text = "Figure 4. Confirmed Electronic Reservation Slip (ERS Ticket Confirmation)"
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.paragraph_format.space_before = Pt(1)
+            p.paragraph_format.space_after = Pt(2)
         elif "Figure 5." in p.text:
             p.text = "Figure 5. Live Waitlist Queue and Real-Time Position Tracking"
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.paragraph_format.space_before = Pt(1)
+            p.paragraph_format.space_after = Pt(2)
 
-    # Add Figure 6 and Figure 7 before Section 3.8
+    # Insert Figure 6 & 7 before Section 3.8
     p_38 = None
     for p in doc.paragraphs:
         if "3.8 Testing and Results" in p.text:
@@ -480,33 +536,52 @@ def generate_report():
             break
             
     if p_38:
-        # Insert Figure 6 (SQL Reports)
         img_reports = SCREENSHOTS_DIR / 'sql_reports.png'
         if img_reports.exists():
             p_img6 = p_38.insert_paragraph_before()
             p_img6.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            p_img6.add_run().add_picture(str(img_reports), width=Inches(5.8))
+            p_img6.paragraph_format.space_before = Pt(2)
+            p_img6.paragraph_format.space_after = Pt(1)
+            p_img6.paragraph_format.keep_with_next = True
+            p_img6.add_run().add_picture(str(img_reports), width=Inches(3.7))
             p_cap6 = p_38.insert_paragraph_before("Figure 6. Executive SQL Analytical Reports Console")
             p_cap6.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p_cap6.paragraph_format.space_before = Pt(1)
+            p_cap6.paragraph_format.space_after = Pt(2)
             p_cap6.runs[0].font.name = FONT_NAME
-            p_cap6.runs[0].font.size = Pt(10)
+            p_cap6.runs[0].font.size = Pt(9.0)
             p_cap6.runs[0].font.bold = True
             
-        # Insert Figure 7 (Admin Schema Explorer)
         img_admin = SCREENSHOTS_DIR / 'schema_admin.png'
         if img_admin.exists():
             p_img7 = p_38.insert_paragraph_before()
             p_img7.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            p_img7.add_run().add_picture(str(img_admin), width=Inches(5.8))
+            p_img7.paragraph_format.space_before = Pt(2)
+            p_img7.paragraph_format.space_after = Pt(1)
+            p_img7.paragraph_format.keep_with_next = True
+            p_img7.add_run().add_picture(str(img_admin), width=Inches(3.7))
             p_cap7 = p_38.insert_paragraph_before("Figure 7. Relational Database Schema Explorer and Administrative Inventory Control")
             p_cap7.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p_cap7.paragraph_format.space_before = Pt(1)
+            p_cap7.paragraph_format.space_after = Pt(2)
             p_cap7.runs[0].font.name = FONT_NAME
-            p_cap7.runs[0].font.size = Pt(10)
+            p_cap7.runs[0].font.size = Pt(9.0)
             p_cap7.runs[0].font.bold = True
-        print("Inserted Figure 6 and Figure 7 before Section 3.8.")
 
-    # Table 15: Test Cases (Table 23 in template, now index 23)
-    populate_table_data(doc.tables[23], TABLE_15_HEADERS, TABLE_15_ROWS, col_widths=[0.8, 1.5, 1.6, 1.5, 1.4, 0.7])
+    # Find the paragraph for Figure 5's image and set page_break_before = True so Figures 5, 6, 7 start on Page B
+    for p in doc.paragraphs:
+        if "Figure 5." in p.text:
+            prev_p = p._p.getprevious()
+            if prev_p is not None:
+                prev_par = docx.text.paragraph.Paragraph(prev_p, doc)
+                prev_par.paragraph_format.page_break_before = True
+
+    # Set page_break_before = True on Section 3.8 so it starts cleanly on Page C
+    if p_38:
+        p_38.paragraph_format.page_break_before = True
+
+    # Table 15: Test Cases (Table 23)
+    populate_table_data(doc.tables[23], TABLE_15_HEADERS, TABLE_15_ROWS, col_widths=[0.8, 1.5, 1.6, 1.5, 1.4, 0.7], base_size_pt=7.5, code_size_pt=7.0, margins=(15, 15, 30, 30))
 
     # Section 3.8: Key Results & Observations Narrative
     test_summary_text = (
@@ -521,12 +596,14 @@ def generate_report():
         "promotion of the next waiting candidate, updating booking status to CONFIRMED and reallocating the vacated berth atomically."
     )
     for p in doc.paragraphs:
+        clean_run_page_breaks(p)
         if "[Key results and observations.]" in p.text:
             p.text = test_summary_text
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-            p.paragraph_format.line_spacing = 1.4
+            p.paragraph_format.line_spacing = 1.08
+            p.paragraph_format.space_after = Pt(2)
             p.runs[0].font.name = FONT_NAME
-            p.runs[0].font.size = Pt(11)
+            p.runs[0].font.size = Pt(9.5)
 
     # -------------------------------------------------------------------------
     # 9. CHAPTER 4: CONCLUSION & FUTURE ENHANCEMENTS
@@ -544,12 +621,14 @@ def generate_report():
         "verification across 16 automated pytest unit and integration test suites confirmed the structural and operational robustness of the design."
     )
     for p in doc.paragraphs:
+        clean_run_page_breaks(p)
         if "[Conclusion - approximately 1 to 2 paragraphs.]" in p.text:
             p.text = conclusion_text
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-            p.paragraph_format.line_spacing = 1.5
+            p.paragraph_format.line_spacing = 1.15
+            p.paragraph_format.space_after = Pt(2)
             p.runs[0].font.name = FONT_NAME
-            p.runs[0].font.size = Pt(12)
+            p.runs[0].font.size = Pt(11.0)
 
     enhancements = [
         "1. Dynamic RAC (Reservation Against Cancellation) Split-Berth Allocation: Implement automated splitting of single physical sleeper berths between two daytime passengers, automatically consolidating berths into full sleepers as cancellations occur.",
@@ -558,49 +637,55 @@ def generate_report():
     ]
     e_idx = 0
     for p in doc.paragraphs:
+        clean_run_page_breaks(p)
         if "[Limitation / Future enhancement" in p.text:
             if e_idx < len(enhancements):
                 p.text = enhancements[e_idx]
                 p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-                p.paragraph_format.line_spacing = 1.4
+                p.paragraph_format.line_spacing = 1.15
+                p.paragraph_format.space_after = Pt(2)
                 p.runs[0].font.name = FONT_NAME
-                p.runs[0].font.size = Pt(11.5)
+                p.runs[0].font.size = Pt(10.5)
                 e_idx += 1
 
     # -------------------------------------------------------------------------
-    # 10. CHAPTER 5: REFERENCES (IEEE STYLE)
+    # 10. CHAPTER 5: REFERENCES (IEEE STYLE - CLEAN NUMBERING)
     # -------------------------------------------------------------------------
-    # Remove instructional placeholders and add IEEE citations
     ref_placeholders = [p for p in doc.paragraphs if "[Replace with an actual source cited" in p.text]
+    last_p = ref_placeholders[-1] if ref_placeholders else None
     for idx, ref_text in enumerate(IEEE_REFERENCES):
         if idx < len(ref_placeholders):
-            ref_placeholders[idx].text = ref_text
-            ref_placeholders[idx].alignment = WD_ALIGN_PARAGRAPH.LEFT
-            ref_placeholders[idx].paragraph_format.line_spacing = 1.2
-            ref_placeholders[idx].paragraph_format.space_after = Pt(4)
-            ref_placeholders[idx].runs[0].font.name = FONT_NAME
-            ref_placeholders[idx].runs[0].font.size = Pt(10)
+            target_p = ref_placeholders[idx]
+            # Strip automatic list numbering from template
+            numPr = target_p._p.xpath('./w:pPr/w:numPr')
+            for elem in numPr:
+                elem.getparent().remove(elem)
+            target_p.text = ref_text
+            target_p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            target_p.paragraph_format.line_spacing = 1.1
+            target_p.paragraph_format.space_after = Pt(2)
+            target_p.runs[0].font.name = FONT_NAME
+            target_p.runs[0].font.size = Pt(9.0)
         else:
-            if ref_placeholders:
-                add_paragraph_after(ref_placeholders[-1], ref_text, font_name=FONT_NAME, size_pt=10, align=WD_ALIGN_PARAGRAPH.LEFT, space_after=4, line_spacing=1.2)
+            if last_p is not None:
+                new_p = add_paragraph_after(last_p, ref_text, font_name=FONT_NAME, size_pt=9.0, align=WD_ALIGN_PARAGRAPH.LEFT, space_after=2, line_spacing=1.1)
+                last_p = new_p
 
-    # Clean up reference guideline notes (5.1 and 5.2)
-    # Remove paragraphs starting from 5.1 IEEE In-Text Citation Guidelines up to APPENDICES
     p_to_del = []
     del_mode = False
     for p in doc.paragraphs:
-        if "5.1 IEEE In-Text Citation Guidelines" in p.text:
+        txt = p.text.strip()
+        if "Use IEEE reference style throughout" in txt or "5.1 IEEE In-Text Citation Guidelines" in txt:
             del_mode = True
-        elif "APPENDICES" in p.text:
+        elif "APPENDICES" in txt:
             del_mode = False
         if del_mode:
             p_to_del.append(p)
     for p in p_to_del:
         remove_element(p._p)
-    print(f"Removed {len(p_to_del)} instructional reference guidelines.")
 
     # -------------------------------------------------------------------------
-    # 11. CHAPTER 6: APPENDICES
+    # 11. CHAPTER 6: APPENDICES (Tightly styled)
     # -------------------------------------------------------------------------
     app_a_text = (
         "The complete relational database schema DDL script, table constraints, indices, relational views, and benchmark SQL "
@@ -611,12 +696,14 @@ def generate_report():
         "• Database Seeding & Synthetic Data Generator: Railway_Reservation_System/database/seed_data.py"
     )
     for p in doc.paragraphs:
+        clean_run_page_breaks(p)
         if "[Database script / file reference]" in p.text:
             p.text = app_a_text
             p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-            p.paragraph_format.line_spacing = 1.3
+            p.paragraph_format.line_spacing = 1.05
+            p.paragraph_format.space_after = Pt(2)
             p.runs[0].font.name = FONT_CODE
-            p.runs[0].font.size = Pt(9.5)
+            p.runs[0].font.size = Pt(8.0)
 
     app_b_text = (
         "The complete full-stack web application source code is organized into modular Flask blueprints:\n\n"
@@ -629,15 +716,17 @@ def generate_report():
         "• Automated Test Suite (16 pytest suites): Railway_Reservation_System/tests/test_*.py"
     )
     for p in doc.paragraphs:
+        clean_run_page_breaks(p)
         if "[Source-code / repository reference]" in p.text:
             p.text = app_b_text
             p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-            p.paragraph_format.line_spacing = 1.3
+            p.paragraph_format.line_spacing = 1.05
+            p.paragraph_format.space_after = Pt(2)
             p.runs[0].font.name = FONT_CODE
-            p.runs[0].font.size = Pt(9.5)
+            p.runs[0].font.size = Pt(8.0)
 
     app_c_text = (
-        "Automated Test Execution Transcript (pytest 8.4.2 | Python 3.9.6 | macOS arm64):\n\n"
+        "Automated Test Execution Transcript (pytest 8.4.2 | Python 3.9.6 | macOS arm64):\n"
         "============================= test session starts ==============================\n"
         "Railway_Reservation_System/tests/test_availability.py::test_interval_overlap_logic PASSED      [  6%]\n"
         "Railway_Reservation_System/tests/test_availability.py::test_non_overlapping_seat_reuse PASSED   [ 12%]\n"
@@ -658,26 +747,274 @@ def generate_report():
         "============================== 16 passed in 0.41s =============================="
     )
     for p in doc.paragraphs:
+        clean_run_page_breaks(p)
         if "[Additional supporting material]" in p.text:
             p.text = app_c_text
             p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-            p.paragraph_format.line_spacing = 1.1
+            p.paragraph_format.line_spacing = 1.0
+            p.paragraph_format.space_after = Pt(2)
             p.runs[0].font.name = FONT_CODE
-            p.runs[0].font.size = Pt(8.5)
+            p.runs[0].font.size = Pt(7.5)
 
     # -------------------------------------------------------------------------
-    # 12. SAVE FINAL REPORTS
+    # 12. REMOVE ALL REMAINING INSTRUCTIONAL PROMPTS AND BLANK PARAGRAPHS
+    # -------------------------------------------------------------------------
+    instruction_snippets = [
+        "use this common structure for all dbms pbl projects",
+        "update this list after finalising the report",
+        "retain only the acronyms used in the report",
+        "this chapter should represent the evidence",
+        "describe the current problem, affected users",
+        "state 3-5 measurable objectives",
+        "explain how the proposed solution will address",
+        "insert the approved er diagram",
+        "this chapter should document how the approved",
+        "list every relation derived from the er model",
+        "include primary key, foreign key, unique",
+        "list the important functional dependencies",
+        "prepare the data dictionary for all tables",
+        "mention the dbms used, provide representative",
+        "this chapter should show how the approved",
+        "briefly explain the users, application purpose",
+        "explain how the application prevents invalid",
+        "insert the important application screenshots",
+        "summarize the key results after the test-case",
+        "summarize the problem addressed, database design",
+        "mention genuine limitations of the current",
+        "attach the complete ddl/dml/query script",
+        "provide the source-code folder/repository",
+        "include any additional test data, screenshots",
+        "write the abstract as one self-contained paragraph",
+        "use ieee reference style throughout the report"
+    ]
+    
+    # Controlled major section breaks:
+    # Controlled major section breaks:
+    # Notice: REFERENCES is unified with CHAPTER 4 on the same page!
+    # Notice: CHAPTER 3 flows right after Section 2.6 on the same page!
+    major_breaks = [
+        "ACKNOWLEDGEMENT",
+        "UNDERTAKING",
+        "TABLE OF CONTENTS",
+        "ABSTRACT",
+        "CHAPTER 1",
+        "CHAPTER 2",
+        "CHAPTER 4",
+        "APPENDICES"
+    ]
+
+    p_to_remove = []
+    for p in doc.paragraphs:
+        txt = p.text.strip().lower()
+        has_draw = '<w:drawing' in p._p.xml
+        
+        is_instruction = any(snippet in txt for snippet in instruction_snippets)
+        if is_instruction:
+            p_to_remove.append(p)
+            continue
+            
+        if not txt and not has_draw:
+            p_to_remove.append(p)
+            continue
+            
+        if p.style and ('Heading' in p.style.name or 'Caption' in p.style.name):
+            p.paragraph_format.keep_with_next = True
+            p.paragraph_format.space_before = Pt(4)
+            p.paragraph_format.space_after = Pt(1)
+        elif any(p.text.strip().startswith(prefix) for prefix in ['Table ', 'Figure ']):
+            p.paragraph_format.keep_with_next = True
+            p.paragraph_format.space_before = Pt(2)
+            p.paragraph_format.space_after = Pt(1)
+
+    for p in p_to_remove:
+        remove_element(p._p)
+
+    for p in doc.paragraphs:
+        txt = p.text.strip()
+        if txt in major_breaks:
+            p.paragraph_format.page_break_before = True
+        elif txt == "CHAPTER 3":
+            p.paragraph_format.page_break_before = False
+            p.paragraph_format.space_before = Pt(12)
+            p.paragraph_format.space_after = Pt(2)
+        elif txt == "REFERENCES":
+            p.paragraph_format.page_break_before = False
+            p.paragraph_format.space_before = Pt(10)
+            p.paragraph_format.space_after = Pt(2)
+
+    # -------------------------------------------------------------------------
+    # 13. SAVE AND EXPORT
     # -------------------------------------------------------------------------
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
     ROOT_DOCS_DIR.mkdir(parents=True, exist_ok=True)
     
     doc.save(str(TARGET_DOCX))
     print(f"Report saved to: {TARGET_DOCX}")
+
+def detect_exact_page_numbers(pdf_path):
+    import pypdf
+    reader = pypdf.PdfReader(str(pdf_path))
+    page_map = {}
     
-    # Also copy to docs/ at root and root folder
+    for idx, page in enumerate(reader.pages):
+        p_num = idx + 1
+        lines = [l.strip() for l in page.extract_text().splitlines() if l.strip()]
+        
+        # Front matter
+        if any(l == 'TABLE OF CONTENTS' for l in lines):
+            page_map['TABLE OF CONTENTS'] = str(p_num)
+        if any('LIST OF TABLES' in l for l in lines) and p_num <= 8:
+            page_map['LIST OF TABLES'] = str(p_num)
+        if any('LIST OF FIGURES' in l for l in lines) and p_num <= 8:
+            page_map['LIST OF FIGURES'] = str(p_num)
+        if any('LIST OF ACRONYMS' in l for l in lines) and p_num <= 8:
+            page_map['LIST OF ACRONYMS'] = str(p_num)
+        if any(l == 'ABSTRACT' for l in lines):
+            page_map['Abstract'] = str(p_num)
+            
+        if p_num < 7:
+            continue
+            
+        # Chapter 1
+        if any('CHAPTER 1' in l for l in lines):
+            page_map['1. PROBLEM STATEMENT, SOLUTION STRATEGY AND ER DIAGRAM'] = str(p_num)
+        if any(l.startswith('1.1 Problem Statement') for l in lines):
+            page_map['   1.1 Problem Statement'] = str(p_num)
+        if any(l.startswith('1.2 Objectives') for l in lines):
+            page_map['   1.2 Objectives'] = str(p_num)
+        if any(l.startswith('1.3 Scope and Assumptions') for l in lines):
+            page_map['   1.3 Scope and Assumptions'] = str(p_num)
+        if any(l.startswith('1.4 Proposed Solution Strategy') for l in lines):
+            page_map['   1.4 Proposed Solution Strategy'] = str(p_num)
+        if any(l.startswith('1.5 Functional Requirements') for l in lines):
+            page_map['   1.5 Functional Requirements'] = str(p_num)
+        if any(l.startswith('1.6 Entity-Relationship') for l in lines):
+            page_map['   1.6 Entity-Relationship Diagram (ERD)'] = str(p_num)
+        if any(l.startswith('1.7 Entity and Relationship') for l in lines):
+            page_map['   1.7 Entity and Relationship Summary'] = str(p_num)
+            
+        # Chapter 2
+        if any('CHAPTER 2' in l for l in lines):
+            page_map['2. LOGICAL DATABASE DESIGN'] = str(p_num)
+        if any(l.startswith('2.1 Relational Schema') for l in lines):
+            page_map['   2.1 Relational Schema'] = str(p_num)
+        if any(l.startswith('2.2 Keys and Integrity') for l in lines):
+            page_map['   2.2 Keys and Integrity Constraints'] = str(p_num)
+        if any(l.startswith('2.3 Functional Dependencies') for l in lines):
+            page_map['   2.3 Functional Dependencies'] = str(p_num)
+        if any(l.startswith('2.4 Normalization') for l in lines):
+            page_map['   2.4 Normalization up to Third Normal Form (3NF)'] = str(p_num)
+        if any(l.startswith('2.5 Data Dictionary') for l in lines):
+            page_map['   2.5 Data Dictionary'] = str(p_num)
+        if any(l.startswith('2.6 Implementation of Logical') for l in lines):
+            page_map['   2.6 Implementation of Logical Design: DDL and Sample Data'] = str(p_num)
+            
+        # Chapter 3
+        if any('CHAPTER 3' in l for l in lines):
+            page_map['3. APPLICATION DEVELOPMENT USING LOGICAL DATABASE DESIGN'] = str(p_num)
+        if any(l.startswith('3.1 Application Overview') for l in lines):
+            page_map['   3.1 Application Overview'] = str(p_num)
+        if any(l.startswith('3.2 Development Environment') for l in lines):
+            page_map['   3.2 Development Environment and Database Connectivity'] = str(p_num)
+        if any(l.startswith('3.3 Application Modules') for l in lines):
+            page_map['   3.3 Application Modules and Database Mapping'] = str(p_num)
+        if any('Core Business Logic' in l or '3.4 CRUD' in l or '3.4 Core Business' in l for l in lines):
+            page_map['   3.4 CRUD Operations'] = str(p_num)
+        if any('Views Specification' in l or '3.5 Business Rules' in l or '3.5 Database Views' in l for l in lines):
+            page_map['   3.5 Business Rules, Validation and Error Handling'] = str(p_num)
+        if any('Validation and Business' in l or '3.6 Reports' in l or '3.6 Validation' in l for l in lines):
+            page_map['   3.6 Reports and Database Operations'] = str(p_num)
+        if any(l.startswith('3.7 Application Screens') for l in lines):
+            page_map['   3.7 Application Screens'] = str(p_num)
+        if any(l.startswith('3.8 Testing and Results') for l in lines):
+            page_map['   3.8 Testing and Results'] = str(p_num)
+            
+        # Chapter 4
+        if any('CHAPTER 4' in l for l in lines):
+            page_map['4. CONCLUSION'] = str(p_num)
+        if any(l.startswith('4.1 Limitations') for l in lines):
+            page_map['   4.1 Limitations and Future Enhancements'] = str(p_num)
+            
+        # Chapter 5 & 6
+        if any(l == 'REFERENCES' for l in lines):
+            page_map['5. REFERENCES'] = str(p_num)
+        if any('APPENDICES' in l for l in lines):
+            page_map['6. APPENDICES'] = str(p_num)
+        if any('APPENDIX A' in l for l in lines):
+            page_map['   Appendix A — Complete Database Script'] = str(p_num)
+        if any('APPENDIX B' in l for l in lines):
+            page_map['   Appendix B — Application Source Code'] = str(p_num)
+        if any('APPENDIX C' in l for l in lines):
+            page_map['   Appendix C — Additional Test Data and Outputs'] = str(p_num)
+            
+        # Tables 1-15
+        for t_idx in range(1, 16):
+            t_key = f'Table {t_idx}'
+            if any(l.startswith(f'Table {t_idx}.') for l in lines) and t_key not in page_map:
+                page_map[t_key] = str(p_num)
+                
+        # Figures 1-7
+        for f_idx in range(1, 8):
+            f_key = f'Figure {f_idx}'
+            if any(l.startswith(f'Figure {f_idx}.') for l in lines) and f_key not in page_map:
+                page_map[f_key] = str(p_num)
+                
+    return page_map
+
+def build_with_exact_page_numbers():
+    # Pass 1: Build initial optimized docx
+    print("--- PASS 1: Generating initial space-optimized docx ---")
+    generate_report()
+    
+    # Export to PDF via LibreOffice
+    print("Converting to PDF for page layout detection...")
+    subprocess.run([
+        '/opt/homebrew/bin/soffice', '--headless', '--convert-to', 'pdf',
+        str(TARGET_DOCX), '--outdir', str(DOCS_DIR)
+    ], check=True)
+    
+    # Pass 2: Extract real page numbers from PDF
+    print("--- PASS 2: Detecting exact page numbers from PDF ---")
+    page_map = detect_exact_page_numbers(TARGET_PDF)
+    print(f"Detected {len(page_map)} structural targets in PDF.")
+    
+    # Build updated TOC, Tables List, Figures List
+    new_toc = []
+    for item, fallback_p in TOC_DATA:
+        p_detected = page_map.get(item, page_map.get(item.strip(), fallback_p))
+        new_toc.append((item, p_detected))
+        
+    new_tables = []
+    for tbl, title, fallback_p in TABLES_LIST:
+        p_detected = page_map.get(tbl, fallback_p)
+        new_tables.append((tbl, title, p_detected))
+        
+    new_figures = []
+    for fig, title, fallback_p in FIGURES_LIST:
+        p_detected = page_map.get(fig, fallback_p)
+        new_figures.append((fig, title, p_detected))
+        
+    # Re-run generate_report with exact page numbers
+    print("Re-compiling report with 100% synchronized page numbers...")
+    generate_report(
+        toc_data_override=new_toc,
+        tables_list_override=new_tables,
+        figures_list_override=new_figures
+    )
+    
+    # Export final PDF
+    print("Generating final synchronized PDF...")
+    subprocess.run([
+        '/opt/homebrew/bin/soffice', '--headless', '--convert-to', 'pdf',
+        str(TARGET_DOCX), '--outdir', str(DOCS_DIR)
+    ], check=True)
+    
+    # Copy deliverables to root and docs/
     shutil.copy(str(TARGET_DOCX), str(ROOT_DOCS_DIR / 'Railway_Ticket_Reservation_DBMS_PBL_Report.docx'))
     shutil.copy(str(TARGET_DOCX), str(ROOT_DIR / 'Railway_Ticket_Reservation_DBMS_PBL_Report.docx'))
-    print("Copied report to docs/ and workspace root.")
+    shutil.copy(str(TARGET_PDF), str(ROOT_DOCS_DIR / 'Railway_Ticket_Reservation_DBMS_PBL_Report.pdf'))
+    shutil.copy(str(TARGET_PDF), str(ROOT_DIR / 'Railway_Ticket_Reservation_DBMS_PBL_Report.pdf'))
+    print("All deliverables copied to docs/ and workspace root.")
 
 if __name__ == '__main__':
-    generate_report()
+    build_with_exact_page_numbers()
