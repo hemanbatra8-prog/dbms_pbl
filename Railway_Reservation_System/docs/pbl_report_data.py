@@ -337,54 +337,111 @@ TABLE_7_ROWS = [
 # -------------------------------------------------------------------------
 TABLE_8_HEADERS = ["Table", "Attribute", "Data Type", "Key / Constraint", "Description"]
 TABLE_8_ROWS = [
-    ["stations", "station_id", "INT", "PK, AUTO_INCREMENT", "Surrogate unique key for station."],
-    ["stations", "station_code", "VARCHAR(10)", "UNIQUE, NOT NULL", "Official IRCTC alphabetic station code."],
+    # 1. stations
+    ["stations", "station_id", "INT", "PK, AUTO_INCREMENT", "Surrogate unique key for station entity."],
+    ["stations", "station_code", "VARCHAR(10)", "UNIQUE, NOT NULL", "Official IRCTC alphabetic station abbreviation code."],
     ["stations", "station_name", "VARCHAR(100)", "NOT NULL", "Official full station designation."],
-    ["stations", "city", "VARCHAR(100)", "NOT NULL", "Municipal city where station is located."],
-    ["stations", "state", "VARCHAR(100)", "NOT NULL", "State / Union Territory location."],
+    ["stations", "city", "VARCHAR(100)", "NOT NULL", "Municipal city where station is geographically located."],
+    ["stations", "state", "VARCHAR(100)", "NOT NULL", "State or Union Territory location."],
+    # 2. routes
     ["routes", "route_id", "INT", "PK, AUTO_INCREMENT", "Surrogate unique key for route corridor."],
     ["routes", "route_code", "VARCHAR(30)", "UNIQUE, NOT NULL", "Alphanumeric route corridor identifier."],
     ["routes", "source_station_id", "INT", "FK, NOT NULL", "Origin station reference (stations.station_id)."],
     ["routes", "destination_station_id", "INT", "FK, NOT NULL", "Terminating station reference (stations.station_id)."],
     ["routes", "total_distance_km", "DECIMAL(7,2)", "CHECK (> 0), NOT NULL", "Total corridor track distance in kilometers."],
+    # 3. train_stops
     ["train_stops", "stop_id", "INT", "PK, AUTO_INCREMENT", "Surrogate unique key for train halt."],
     ["train_stops", "route_id", "INT", "FK, NOT NULL", "Route corridor reference (routes.route_id)."],
     ["train_stops", "station_id", "INT", "FK, NOT NULL", "Station halt reference (stations.station_id)."],
     ["train_stops", "stop_sequence", "INT", "CHECK (> 0), NOT NULL", "Monotonically increasing stop sequence index."],
     ["train_stops", "distance_from_source_km", "DECIMAL(7,2)", "CHECK (>= 0), NOT NULL", "Cumulative track distance from route origin."],
+    ["train_stops", "arrival_time", "TIME", "NULL", "Scheduled train arrival timetable time."],
+    ["train_stops", "departure_time", "TIME", "NULL", "Scheduled train departure timetable time."],
+    # 4. trains
     ["trains", "train_id", "INT", "PK, AUTO_INCREMENT", "Surrogate unique key for train definition."],
     ["trains", "train_number", "VARCHAR(10)", "UNIQUE, NOT NULL", "Official 5-digit Indian Railways train number."],
     ["trains", "train_name", "VARCHAR(100)", "NOT NULL", "Commercial train name (e.g., 'Vande Bharat Express')."],
     ["trains", "train_type", "VARCHAR(30)", "NOT NULL", "Operational train category (e.g., 'Superfast')."],
+    ["trains", "route_id", "INT", "FK, NOT NULL", "Assigned route corridor (routes.route_id)."],
+    # 5. train_runs
     ["train_runs", "run_id", "INT", "PK, AUTO_INCREMENT", "Surrogate unique key for dated train run."],
     ["train_runs", "train_id", "INT", "FK, NOT NULL", "Train definition reference (trains.train_id)."],
     ["train_runs", "run_date", "DATE", "NOT NULL", "Calendar date of train departure."],
     ["train_runs", "status", "VARCHAR(20)", "DEFAULT 'SCHEDULED'", "Operational status (SCHEDULED, COMPLETED, CANCELLED)."],
+    # 6. coaches
     ["coaches", "coach_id", "INT", "PK, AUTO_INCREMENT", "Surrogate unique key for coach instance."],
+    ["coaches", "train_id", "INT", "FK, NOT NULL", "Train reference (trains.train_id)."],
     ["coaches", "coach_code", "VARCHAR(10)", "NOT NULL", "Physical coach identifier (e.g., 'C1', 'B1')."],
     ["coaches", "travel_class", "VARCHAR(10)", "NOT NULL", "Class of travel (1A, 2A, 3A, CC, SL)."],
     ["coaches", "total_seats", "INT", "CHECK (> 0), DEFAULT 72", "Physical passenger seating capacity."],
+    # 7. seats
     ["seats", "seat_id", "INT", "PK, AUTO_INCREMENT", "Surrogate unique key for seat berth."],
+    ["seats", "coach_id", "INT", "FK, NOT NULL", "Coach reference (coaches.coach_id)."],
     ["seats", "seat_number", "INT", "CHECK (> 0), NOT NULL", "Berth number within coach (1 to 72)."],
     ["seats", "berth_type", "VARCHAR(15)", "NOT NULL", "Berth orientation (LOWER, UPPER, MIDDLE, SIDE LOWER, SIDE UPPER)."],
+    # 8. passengers
     ["passengers", "passenger_id", "INT", "PK, AUTO_INCREMENT", "Surrogate unique key for passenger master."],
     ["passengers", "full_name", "VARCHAR(100)", "NOT NULL", "Full legal passenger name."],
+    ["passengers", "gender", "VARCHAR(10)", "NOT NULL", "Passenger gender identity."],
     ["passengers", "age", "INT", "CHECK (age > 0 AND age < 120)", "Passenger age in years."],
     ["passengers", "email", "VARCHAR(120)", "NOT NULL, INDEX", "Contact email address for ERS notifications."],
+    ["passengers", "phone", "VARCHAR(20)", "NOT NULL", "Contact phone number for journey alerts."],
+    ["passengers", "id_card_type", "VARCHAR(20)", "NOT NULL", "Government ID type (AADHAAR, PAN, PASSPORT)."],
+    ["passengers", "id_card_number", "VARCHAR(50)", "NOT NULL", "Government ID identification number."],
+    # 9. fare_rules
+    ["fare_rules", "fare_id", "INT", "PK, AUTO_INCREMENT", "Surrogate unique key for tariff rule."],
+    ["fare_rules", "train_type", "VARCHAR(30)", "NOT NULL", "Train classification type."],
+    ["fare_rules", "travel_class", "VARCHAR(10)", "NOT NULL", "Accommodation class category."],
+    ["fare_rules", "base_fare", "DECIMAL(10,2)", "CHECK (>= 0), NOT NULL", "Base ticket reservation charge."],
+    ["fare_rules", "rate_per_km", "DECIMAL(6,2)", "CHECK (>= 0), NOT NULL", "Per-kilometer distance rate."],
+    ["fare_rules", "reservation_fee", "DECIMAL(6,2)", "CHECK (>= 0), DEFAULT 40.00", "Flat mandatory reservation charge."],
+    # 10. bookings
     ["bookings", "booking_id", "INT", "PK, AUTO_INCREMENT", "Surrogate unique key for reservation."],
     ["bookings", "pnr_number", "VARCHAR(12)", "UNIQUE, NOT NULL", "10-digit Passenger Name Record string."],
+    ["bookings", "run_id", "INT", "FK, NOT NULL", "Associated train run (train_runs.run_id)."],
+    ["bookings", "passenger_id", "INT", "FK, NOT NULL", "Passenger master reference (passengers.passenger_id)."],
+    ["bookings", "origin_station_id", "INT", "FK, NOT NULL", "Origin boarding station reference."],
+    ["bookings", "destination_station_id", "INT", "FK, NOT NULL", "Destination debarking station reference."],
+    ["bookings", "origin_stop_seq", "INT", "NOT NULL", "Boarding station stop sequence index."],
+    ["bookings", "destination_stop_seq", "INT", "NOT NULL", "Debarking station stop sequence index."],
+    ["bookings", "travel_class", "VARCHAR(10)", "NOT NULL", "Class booked (1A, 2A, 3A, CC, SL)."],
     ["bookings", "booking_status", "VARCHAR(20)", "DEFAULT 'CONFIRMED'", "Status (CONFIRMED, WAITLISTED, CANCELLED)."],
     ["bookings", "total_fare", "DECIMAL(10,2)", "CHECK (>= 0), NOT NULL", "Calculated ticket fare in INR."],
+    ["bookings", "booked_at", "DATETIME", "NOT NULL, DEFAULT NOW", "Timestamp of booking transaction."],
+    # 11. journey_segments
     ["journey_segments", "segment_id", "INT", "PK, AUTO_INCREMENT", "Surrogate unique key for berth allocation."],
+    ["journey_segments", "booking_id", "INT", "FK, NOT NULL", "Associated booking reference."],
+    ["journey_segments", "seat_id", "INT", "FK, NOT NULL", "Allocated physical berth reference."],
+    ["journey_segments", "run_id", "INT", "FK, NOT NULL", "Dated train run reference."],
     ["journey_segments", "start_stop_seq", "INT", "NOT NULL", "Origin station stop sequence number."],
     ["journey_segments", "end_stop_seq", "INT", "NOT NULL", "Destination station stop sequence number."],
     ["journey_segments", "allocation_status", "VARCHAR(20)", "DEFAULT 'ACTIVE'", "Status of berth allocation (ACTIVE, CANCELLED)."],
+    # 12. waitlists
     ["waitlists", "waitlist_id", "INT", "PK, AUTO_INCREMENT", "Surrogate unique key for waitlist ticket."],
+    ["waitlists", "booking_id", "INT", "FK, NOT NULL", "Waitlisted booking header reference."],
+    ["waitlists", "run_id", "INT", "FK, NOT NULL", "Dated train run reference."],
+    ["waitlists", "travel_class", "VARCHAR(10)", "NOT NULL", "Class for which waitlisted."],
+    ["waitlists", "origin_stop_seq", "INT", "NOT NULL", "Boarding stop sequence index."],
+    ["waitlists", "destination_stop_seq", "INT", "NOT NULL", "Debarking stop sequence index."],
     ["waitlists", "position", "INT", "CHECK (> 0), NOT NULL", "Numerical FIFO queue priority position."],
+    ["waitlists", "waitlist_status", "VARCHAR(20)", "DEFAULT 'WAITING'", "Status (WAITING, PROMOTED, CANCELLED)."],
+    ["waitlists", "created_at", "DATETIME", "NOT NULL, DEFAULT NOW", "Timestamp of waitlist entry."],
+    # 13. payments
     ["payments", "payment_id", "INT", "PK, AUTO_INCREMENT", "Surrogate unique key for payment entry."],
+    ["payments", "booking_id", "INT", "FK, NOT NULL", "Associated booking reference."],
+    ["payments", "amount", "DECIMAL(10,2)", "CHECK (>= 0), NOT NULL", "Total amount charged in INR."],
+    ["payments", "payment_method", "VARCHAR(30)", "DEFAULT 'SIMULATED_UPI'", "Payment gateway or method."],
     ["payments", "transaction_reference", "VARCHAR(60)", "UNIQUE, NOT NULL", "Deterministic payment transaction reference."],
+    ["payments", "payment_status", "VARCHAR(20)", "DEFAULT 'COMPLETED'", "Payment state (COMPLETED, REFUNDED)."],
+    ["payments", "paid_at", "DATETIME", "NOT NULL, DEFAULT NOW", "Timestamp of successful transaction."],
+    # 14. cancellations
     ["cancellations", "cancellation_id", "INT", "PK, AUTO_INCREMENT", "Surrogate unique key for cancellation entry."],
-    ["cancellations", "refund_amount", "DECIMAL(10,2)", "CHECK (>= 0), NOT NULL", "Net amount refunded to passenger (80% of fare)."]
+    ["cancellations", "booking_id", "INT", "FK, UNIQUE, NOT NULL", "Cancelled booking reference."],
+    ["cancellations", "cancellation_reason", "VARCHAR(255)", "NOT NULL", "User-specified cancellation reason."],
+    ["cancellations", "cancellation_fee", "DECIMAL(10,2)", "CHECK (>= 0), DEFAULT 0", "Deducted penalty amount (20%)."],
+    ["cancellations", "refund_amount", "DECIMAL(10,2)", "CHECK (>= 0), NOT NULL", "Net amount refunded to passenger (80%)."],
+    ["cancellations", "refund_status", "VARCHAR(20)", "DEFAULT 'PROCESSED'", "Refund processing state."],
+    ["cancellations", "cancelled_at", "DATETIME", "NOT NULL, DEFAULT NOW", "Timestamp of cancellation transaction."]
 ]
 
 # -------------------------------------------------------------------------
@@ -509,7 +566,9 @@ IEEE_REFERENCES = [
     "[5] Oracle Corporation, MySQL 8.0 Reference Manual: InnoDB Storage Engine Architecture and Concurrency, Redwood Shores, CA, USA, 2024. [Online]. Available: https://dev.mysql.com/doc/refman/8.0/en/",
     "[6] Pallets Projects, Flask Documentation (v3.1.x): Application Context, Blueprints, and Database Handling, 2024. [Online]. Available: https://flask.palletsprojects.com/",
     "[7] M. Bayer, SQLAlchemy Documentation: Transaction Management and ORM Mapping, 2024. [Online]. Available: https://docs.sqlalchemy.org/",
-    "[8] H. Krekel et al., pytest: Python Testing Framework Documentation, ver. 8.4, 2024. [Online]. Available: https://docs.pytest.org/"
+    "[8] H. Krekel et al., pytest: Python Testing Framework Documentation, ver. 8.4, 2024. [Online]. Available: https://docs.pytest.org/",
+    "[9] M. Stonebraker, “The design of the POSTGRES storage system,” in Proc. 13th Int. Conf. Very Large Data Bases (VLDB), 1987, pp. 289–300.",
+    "[10] J. Gray and A. Reuter, Transaction Processing: Concepts and Techniques. San Francisco, CA, USA: Morgan Kaufmann, 1993."
 ]
 
 print("Loaded all structured PBL report datasets successfully.")
